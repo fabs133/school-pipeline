@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ClassifyReportOutput",
+  "type": "object",
+  "required": ["requirements"],
+  "properties": {
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "source", "category", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "source": { "type": "string" },
+          "category": { "type": "string" },
+          "status": { "type": "string" },
+          "priority": { "type": "string" },
+          "quote": { "type": "string" },
+          "related_findings": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "implicit_requirements": { "type": "array" },
+    "requirement_count": { "type": "object" }
+  }
+}

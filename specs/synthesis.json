@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SynthesisOutput",
+  "type": "object",
+  "required": ["title", "sections"],
+  "properties": {
+    "title": { "type": "string", "minLength": 3 },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["section_id", "heading", "content"],
+        "properties": {
+          "section_id": { "type": "string" },
+          "heading": { "type": "string" },
+          "content": { "type": "string", "minLength": 10 },
+          "bullet_points": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "speaker_notes": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ClassifyDocsOutput",
+  "type": "object",
+  "required": ["documents"],
+  "properties": {
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "filename", "role"],
+        "properties": {
+          "id": { "type": "string" },
+          "filename": { "type": "string" },
+          "role": { "type": "string", "enum": ["template", "source", "constraint", "reference"] },
+          "reasoning": { "type": "string" },
+          "fields": {},
+          "extracted_info": { "type": "object" }
+        }
+      }
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "topic": { "type": "string" },
+          "source_a": { "type": "string" },
+          "source_b": { "type": "string" },
+          "recommendation": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IntakeOutput",
+  "type": "object",
+  "required": ["task_text", "subject", "task_type", "constraints"],
+  "properties": {
+    "task_text": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Extracted assignment text"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Detected subject area"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": ["question_set", "presentation", "document", "essay", "mixed"]
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "page_count": { "type": ["integer", "null"] },
+        "slide_count": { "type": ["integer", "null"] },
+        "word_count": { "type": ["integer", "null"] },
+        "language": { "type": "string", "enum": ["de", "en"] },
+        "format": { "type": "string", "enum": ["pptx", "docx", "pdf", "md"] },
+        "due_date": { "type": ["string", "null"] },
+        "specific_requirements": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["language", "format"]
+    },
+    "raw_input_type": {
+      "type": "string",
+      "enum": ["text", "image", "pdf"]
+    }
+  }
+}

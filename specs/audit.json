@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AuditOutput",
+  "type": "object",
+  "required": ["title", "findings", "summary"],
+  "properties": {
+    "title": { "type": "string" },
+    "documents_analyzed": { "type": "array", "items": { "type": "string" } },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["category", "severity", "title", "detail"],
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "type": "string", "enum": ["contradiction", "gap", "impossibility", "ambiguity", "underdefined"] },
+          "severity": { "type": "string", "enum": ["blocker", "warning", "info"] },
+          "title": { "type": "string" },
+          "detail": { "type": "string" },
+          "sources": { "type": "array", "items": { "type": "string" } },
+          "quotes": { "type": "array", "items": { "type": "string" } },
+          "recommendation": { "type": "string" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "total_findings": { "type": "integer" },
+        "blockers": { "type": "integer" },
+        "warnings": { "type": "integer" },
+        "info": { "type": "integer" },
+        "completeness_score": { "type": "number" },
+        "feasibility_score": { "type": "number" },
+        "verdict": { "type": "string" }
+      }
+    },
+    "missing_information": { "type": "array", "items": { "type": "string" } }
+  }
+}

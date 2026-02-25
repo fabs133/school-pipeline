@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SolveOutput",
+  "type": "object",
+  "required": ["title", "solved_tasks"],
+  "properties": {
+    "title": { "type": "string" },
+    "subject": { "type": "string" },
+    "solved_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task", "solution"],
+        "properties": {
+          "task": { "type": "object" },
+          "solution": {
+            "type": "object",
+            "properties": {
+              "answer": { "type": "string" },
+              "table_data": {},
+              "calculation_steps": { "type": "array", "items": { "type": "string" } },
+              "confidence": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "unsolvable_tasks": { "type": "array" }
+  }
+}

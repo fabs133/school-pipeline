@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DecomposeOutput",
+  "type": "object",
+  "required": ["title", "tasks"],
+  "properties": {
+    "title": { "type": "string" },
+    "subject": { "type": "string" },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "task_type", "text", "solvable"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "task_type": {
+            "type": "string",
+            "enum": ["calculation", "table_fill", "text_answer", "external_link", "multi_choice", "unknown"]
+          },
+          "text": { "type": "string" },
+          "context": { "type": "string" },
+          "table_structure": {},
+          "data": { "type": "object" },
+          "external_url": { "type": "string" },
+          "solvable": { "type": "boolean" },
+          "skip_reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

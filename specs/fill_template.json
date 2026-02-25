@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FillTemplateOutput",
+  "type": "object",
+  "required": ["filled_templates"],
+  "properties": {
+    "filled_templates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["template_id"],
+        "properties": {
+          "template_id": { "type": "string" },
+          "template_filename": { "type": "string" },
+          "fields_filled": { "type": "array" },
+          "fields_skipped": { "type": "array" },
+          "warnings": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "contradictions": { "type": "array" },
+    "source_summary": { "type": "object" }
+  }
+}

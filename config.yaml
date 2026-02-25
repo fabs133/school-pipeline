@@ -1,0 +1,43 @@
+# schulpipeline — Minimal Configuration
+# =======================================
+# Only two API keys needed, both free:
+#   - GROQ_API_KEY:   https://console.groq.com → API Keys
+#   - GEMINI_API_KEY: https://aistudio.google.com/apikey
+
+backends:
+  groq:
+    api_key: ${GROQ_API_KEY}
+    model: "llama-3.1-70b-versatile"
+  gemini:
+    api_key: ${GEMINI_API_KEY}
+    model: "gemini-2.0-flash"
+  # Optional paid backends (uncomment if needed):
+  # mistral:
+  #   api_key: ${MISTRAL_API_KEY}
+  #   model: "mistral-large-latest"
+  # openai:
+  #   api_key: ${OPENAI_API_KEY}
+  #   model: "gpt-4o-mini"
+
+# Cascade order per stage — router tries left to right, skips unavailable
+cascade:
+  intake:     [gemini]                     # Vision for image inputs
+  plan:       [groq, gemini]
+  research:   [groq, gemini]
+  synthesize: [groq, gemini]
+  artifact:   [groq, gemini]
+
+research:
+  enabled: true
+  use_web: false                           # Set true when DDG search is wired up
+  cache_dir: ".schulpipeline/cache"
+  request_delay: 1.5
+
+output:
+  dir: "./output"
+  default_format: "pptx"
+  language: "de"
+
+logging:
+  level: "INFO"
+  file: ".schulpipeline/pipeline.log"
