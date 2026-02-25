@@ -10,6 +10,7 @@ from typing import Any
 
 from .backends.router import BackendRouter
 from .config import PipelineConfig
+from .logging_config import set_stage
 from .stages.base import StageResult, validate_against_spec
 from .stages import IntakeStage, PlanStage, ResearchStage, SynthesizeStage, ArtifactStage
 
@@ -109,6 +110,7 @@ class Pipeline:
 
         for stage in stages:
             stage_name = stage.name
+            set_stage(stage_name)
             logger.info(f"=== Stage: {stage_name} ===")
 
             # Run the stage

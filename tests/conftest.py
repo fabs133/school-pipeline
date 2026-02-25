@@ -179,6 +179,8 @@ def mock_router(mock_config, mock_backend):
     router._cooldowns = {}
     router._call_counts = {"mock": 0}
     router._total_cost = 0.0
+    router._stage_costs = {}
+    router._stage_tokens = {}
     return router
 
 
@@ -220,6 +222,8 @@ def cascade_router(mock_config, mock_backend):
     router._cooldowns = {}
     router._call_counts = {"failing": 0, "mock": 0}
     router._total_cost = 0.0
+    router._stage_costs = {}
+    router._stage_tokens = {}
     return router
 
 

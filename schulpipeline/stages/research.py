@@ -110,32 +110,33 @@ class ResearchStage(BaseStage):
     async def _web_research(self, sections: list[dict], config: Any) -> dict[str, list[dict]]:
         """Run web research for sections that have queries.
 
-        Returns dict mapping section_id → list of findings.
-
-        This is the integration point for the DDG/scraping system from enrich_text.py.
-        Currently returns empty (LLM-only mode). Replace this method body with:
-
-            from schulpipeline.research.web import search_and_extract
-
-            results = {}
-            for section in sections:
-                queries = section.get("research_queries", [])
-                if not queries:
-                    continue
-                findings = []
-                for query in queries[:2]:  # limit queries per section
-                    search_results = await search_and_extract(query, max_results=2)
-                    for sr in search_results:
-                        if sr.quality in ("high", "medium"):
-                            findings.append({
-                                "content": sr.text[:500],
-                                "source": sr.url,
-                                "relevance": 0.7,
-                            })
-                    await asyncio.sleep(config.research.request_delay)
-                if findings:
-                    results[section["id"]] = findings
-            return results
+        Returns dict mapping section_id -> list of findings.
+        Uses DuckDuckGo search + page scraping with disk caching.
         """
-        # TODO: Wire up DDG search + scraping from enrich_text.py
-        return {}
+        import asyncio
+        from schulpipeline.research.web import search_and_extract, DiskCache
+
+        cache = DiskCache(config.research.cache_dir)
+        results: dict[str, list[dict]] = {}
+
+        for section in sections:
+            queries = section.get("research_queries", [])
+            if not queries:
+                continue
+
+            findings: list[dict] = []
+            for query in queries[:2]:  # limit queries per section
+                search_results = await search_and_extract(query, max_results=2, cache=cache)
+                for sr in search_results:
+                    if sr.quality in ("high", "medium"):
+                        findings.append({
+                            "content": sr.text[:500],
+                            "source": sr.url,
+                            "relevance": 0.7,
+                        })
+                await asyncio.sleep(config.research.request_delay)
+
+            if findings:
+                results[section["id"]] = findings
+
+        return results

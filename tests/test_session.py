@@ -140,10 +140,12 @@ def test_store_load_nonexistent(tmp_path):
 
 
 def test_store_save_updates(tmp_path):
+    import time
     store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
     session = store.create(task_input="Original")
     original_updated = session.updated_at
 
+    time.sleep(0.01)  # ensure distinct timestamps
     session.status = "running"
     store.save(session)
 
@@ -185,8 +187,10 @@ def test_store_list_with_status_filter(tmp_path):
 
 
 def test_store_find_latest(tmp_path):
+    import time
     store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
     store.create(task_input="First")
+    time.sleep(0.01)  # ensure distinct timestamps
     s2 = store.create(task_input="Second")
 
     latest = store.find_latest()

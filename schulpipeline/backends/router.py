@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import random
 import time
 from dataclasses import dataclass, field
 from typing import Any
+
+MAX_RETRIES_PER_BACKEND = 2
+BACKOFF_BASE = 1.0  # seconds
+BACKOFF_MAX = 10.0  # seconds
 
 from ..config import BackendConfig, PipelineConfig
 from .base import Backend, BackendError, LLMResponse, RateLimitError
@@ -38,8 +44,12 @@ class BackendRouter:
     _cooldowns: dict[str, float] = field(default_factory=dict, init=False)  # name -> cooldown_until
     _call_counts: dict[str, int] = field(default_factory=dict, init=False)
     _total_cost: float = field(default=0.0, init=False)
+    _stage_costs: dict[str, float] = field(default_factory=dict, init=False)  # stage -> cost
+    _stage_tokens: dict[str, dict[str, int]] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
+        self._stage_costs = {}
+        self._stage_tokens = {}
         self._discover_backends()
 
     def _discover_backends(self) -> None:
@@ -79,6 +89,46 @@ class BackendRouter:
             del self._cooldowns[name]
             return False
         return True
+
+    async def _call_backend(
+        self,
+        backend: Backend,
+        name: str,
+        stage: str,
+        messages: list[dict[str, Any]],
+        temperature: float,
+        max_tokens: int,
+        response_format: dict | None,
+        require_vision: bool,
+    ) -> LLMResponse:
+        """Call a single backend with exponential backoff on retryable errors."""
+        last_error: Exception | None = None
+
+        for attempt in range(MAX_RETRIES_PER_BACKEND + 1):
+            try:
+                if attempt > 0:
+                    delay = min(BACKOFF_BASE * (2 ** (attempt - 1)), BACKOFF_MAX)
+                    jitter = random.uniform(0, delay * 0.5)
+                    wait = delay + jitter
+                    logger.info(f"[{stage}] {name} retry {attempt}/{MAX_RETRIES_PER_BACKEND} after {wait:.1f}s")
+                    await asyncio.sleep(wait)
+
+                if require_vision:
+                    return await backend.complete_vision(messages, temperature, max_tokens)
+                else:
+                    return await backend.complete(messages, temperature, max_tokens, response_format)
+
+            except RateLimitError:
+                raise  # Don't retry rate limits — let cascade handle it
+            except BackendError as e:
+                last_error = e
+                if not e.retryable or attempt >= MAX_RETRIES_PER_BACKEND:
+                    raise
+                logger.warning(f"[{stage}] {name} attempt {attempt + 1} failed (retryable): {e}")
+            except Exception:
+                raise  # Don't retry unexpected errors
+
+        raise last_error  # type: ignore[misc]
 
     async def complete(
         self,
@@ -120,13 +170,18 @@ class BackendRouter:
             try:
                 logger.info(f"[{stage}] Trying {name} (model={backend.model if hasattr(backend, 'model') else '?'})")
 
-                if require_vision:
-                    result = await backend.complete_vision(messages, temperature, max_tokens)
-                else:
-                    result = await backend.complete(messages, temperature, max_tokens, response_format)
+                result = await self._call_backend(
+                    backend, name, stage, messages,
+                    temperature, max_tokens, response_format, require_vision,
+                )
 
                 self._call_counts[name] = self._call_counts.get(name, 0) + 1
                 self._total_cost += result.cost_usd
+                self._stage_costs[stage] = self._stage_costs.get(stage, 0.0) + result.cost_usd
+                if stage not in self._stage_tokens:
+                    self._stage_tokens[stage] = {"in": 0, "out": 0}
+                self._stage_tokens[stage]["in"] += result.tokens_in
+                self._stage_tokens[stage]["out"] += result.tokens_out
 
                 logger.info(
                     f"[{stage}] {name} succeeded: "
@@ -144,9 +199,6 @@ class BackendRouter:
                 logger.warning(f"[{stage}] {name} failed: {e}")
                 errors.append(f"{name}: {e}")
 
-                if not e.retryable:
-                    continue
-
             except Exception as e:
                 logger.error(f"[{stage}] {name} unexpected error: {e}")
                 errors.append(f"{name}: {e}")
@@ -162,6 +214,8 @@ class BackendRouter:
             "backends_available": self.available_backends,
             "call_counts": dict(self._call_counts),
             "total_cost_usd": self._total_cost,
+            "stage_costs": dict(self._stage_costs),
+            "stage_tokens": dict(self._stage_tokens),
             "active_cooldowns": {
                 name: self._cooldowns[name] - time.time()
                 for name in self._cooldowns

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .config import load_config
 from .backends.router import BackendRouter
+from .logging_config import setup_logging, set_run_id
 from .pipeline import Pipeline
 from .presets import (
     OUTPUT_PRESETS,
@@ -22,20 +23,6 @@ from .presets import (
 )
 
 
-def setup_logging(level: str, log_file: str | None = None) -> None:
-    handlers: list[logging.Handler] = [logging.StreamHandler(sys.stderr)]
-    if log_file:
-        log_path = Path(log_file)
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        handlers.append(logging.FileHandler(log_file))
-    logging.basicConfig(
-        level=getattr(logging, level.upper(), logging.INFO),
-        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
-        datefmt="%H:%M:%S",
-        handlers=handlers,
-    )
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="schulpipeline",
@@ -43,6 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--config", "-c", default="config.yaml", help="Config-Datei")
     parser.add_argument("--log-level", default=None, choices=["DEBUG", "INFO", "WARNING", "ERROR"])
+    parser.add_argument("--json-logs", action="store_true", help="JSON-Format für Log-Ausgabe")
 
     subparsers = parser.add_subparsers(dest="command", help="Befehle")
 
@@ -57,6 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--format", "-f", choices=["pptx", "docx", "md"], help="Format erzwingen")
     run_p.add_argument("--slides", type=int, help="Folienanzahl")
     run_p.add_argument("--tag", action="append", default=[], help="Tags für die Session")
+    run_p.add_argument("--dry-run", action="store_true", help="Nur Plan anzeigen, nicht ausführen")
 
     # --- resume ---
     resume_p = subparsers.add_parser("resume", help="Letzte/bestimmte Session fortsetzen")
@@ -93,6 +82,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- backends ---
     subparsers.add_parser("backends", help="Verfügbare Backends anzeigen")
+
+    # --- doctor ---
+    subparsers.add_parser("doctor", help="System-Diagnose: Umgebung, Keys, Backends prüfen")
 
     return parser
 
@@ -131,6 +123,11 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
 
     if hasattr(args, "format") and args.format:
         config.output.default_format = args.format
+
+    # --dry-run: just show the plan, don't execute full pipeline
+    if getattr(args, "dry_run", False):
+        args_copy = argparse.Namespace(**vars(args))
+        return await cmd_plan(args_copy, config)
 
     # Create session
     from .session import SessionStore, SessionRunner
@@ -401,6 +398,102 @@ def cmd_backends(config) -> int:
     return 0
 
 
+async def cmd_doctor(config) -> int:
+    """Run system diagnostics: Python version, dependencies, API keys, connectivity."""
+    import importlib
+    import platform
+
+    print("schulpipeline doctor\n")
+
+    # 1. System info
+    print("System:")
+    print(f"  Python:   {platform.python_version()}")
+    print(f"  Platform: {platform.system()} {platform.release()}")
+    print()
+
+    # 2. Dependencies
+    print("Dependencies:")
+    deps = [
+        "requests", "yaml", "jsonschema", "pptx", "docx", "bs4", "PIL",
+    ]
+    dep_names = {
+        "yaml": "pyyaml", "pptx": "python-pptx", "docx": "python-docx",
+        "bs4": "beautifulsoup4", "PIL": "Pillow",
+    }
+    all_ok = True
+    for dep in deps:
+        try:
+            importlib.import_module(dep)
+            print(f"  OK  {dep_names.get(dep, dep)}")
+        except ImportError:
+            print(f"  !!  {dep_names.get(dep, dep)} — NICHT INSTALLIERT")
+            all_ok = False
+    print()
+
+    # 3. API keys
+    print("API Keys:")
+    from .config import ENV_KEY_MAP
+    import os
+    keys_found = 0
+    for backend_name, env_var in ENV_KEY_MAP.items():
+        val = os.environ.get(env_var, "")
+        if val:
+            masked = val[:4] + "..." + val[-4:] if len(val) > 8 else "***"
+            print(f"  OK  {env_var} = {masked}")
+            keys_found += 1
+        else:
+            print(f"  --  {env_var} nicht gesetzt")
+    if keys_found == 0:
+        print("  !!  Kein einziger API Key gefunden. Mindestens GROQ_API_KEY oder GEMINI_API_KEY setzen.")
+    print()
+
+    # 4. Backend connectivity
+    print("Backend-Konnektivität:")
+    available = [n for n, c in config.backends.items() if c.is_available]
+    if not available:
+        print("  !!  Keine Backends verfügbar — Konnektivitätstest übersprungen")
+    else:
+        router = BackendRouter(config)
+        for name in available:
+            try:
+                result = await router.complete(
+                    stage="plan",
+                    messages=[
+                        {"role": "system", "content": "Antworte mit einem Wort."},
+                        {"role": "user", "content": "Sage 'OK'."},
+                    ],
+                    temperature=0.0,
+                    max_tokens=10,
+                )
+                print(f"  OK  {name} — {result.latency_ms}ms, model={result.model}")
+                break  # one successful call is enough to confirm cascade works
+            except Exception as e:
+                print(f"  !!  {name} — {e}")
+        await router.close()
+    print()
+
+    # 5. Specs
+    print("Spezifikationen:")
+    specs_dir = Path("specs")
+    if specs_dir.exists():
+        specs = list(specs_dir.glob("*.json"))
+        print(f"  OK  {len(specs)} JSON Schemas in specs/")
+    else:
+        print("  !!  specs/ Verzeichnis nicht gefunden")
+        all_ok = False
+
+    # 6. Config file
+    print(f"\nKonfiguration:")
+    config_path = Path("config.yaml")
+    if config_path.exists():
+        print(f"  OK  config.yaml gefunden")
+    else:
+        print(f"  --  config.yaml nicht gefunden (Defaults werden verwendet)")
+
+    print(f"\n{'OK — Alles bereit.' if all_ok and keys_found > 0 else 'Einige Probleme gefunden — siehe oben.'}")
+    return 0
+
+
 def _get_input(args: argparse.Namespace) -> str | Path | None:
     if hasattr(args, "input") and args.input:
         path = Path(args.input)
@@ -434,12 +527,19 @@ def main() -> None:
     if hasattr(args, "output_dir") and args.output_dir:
         config.output.dir = args.output_dir
 
-    setup_logging(config.log_level, config.log_file)
+    setup_logging(
+        level=config.log_level,
+        log_file=config.log_file,
+        json_logs=getattr(args, "json_logs", False),
+    )
+    set_run_id()
 
     if args.command == "presets":
         sys.exit(cmd_presets(args))
     elif args.command == "backends":
         sys.exit(cmd_backends(config))
+    elif args.command == "doctor":
+        sys.exit(asyncio.run(cmd_doctor(config)))
     elif args.command == "sessions":
         sys.exit(cmd_sessions(args, config))
     elif args.command == "show":
