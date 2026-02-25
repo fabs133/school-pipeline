@@ -4,6 +4,7 @@ import pytest
 from pathlib import Path
 
 from schulpipeline.pipeline import Pipeline
+from schulpipeline.backends.router import BackendRouter
 
 
 @pytest.mark.asyncio
@@ -83,3 +84,85 @@ async def test_pipeline_reports_stage_failure(mock_config, mock_router):
 
     assert not result.success
     assert result.failed_stage == "intake"
+
+
+@pytest.mark.asyncio
+async def test_full_pipeline_text_to_docx(mock_config, mock_router, tmp_path):
+    """Full pipeline: text input -> DOCX output."""
+    mock_config.output.dir = str(tmp_path)
+
+    from tests.conftest import DEFAULT_STAGE_RESPONSES
+    import json
+
+    intake_data = json.loads(DEFAULT_STAGE_RESPONSES["Aufgaben-Parser"])
+    intake_data["constraints"]["format"] = "docx"
+    intake_data["task_type"] = "document"
+
+    plan_data = json.loads(DEFAULT_STAGE_RESPONSES["Planungsassistent"])
+    plan_data["artifact_type"] = "docx"
+
+    # Build synthesis response for DOCX (uses "Dokument-Autor" in system prompt)
+    synthesis_data = json.loads(DEFAULT_STAGE_RESPONSES["Präsentations-Autor"])
+
+    mock_backend = mock_router._backends["mock"]
+    mock_backend._responses = {
+        "Aufgaben-Parser": json.dumps(intake_data),
+        "Planungsassistent": json.dumps(plan_data),
+        "Dokument-Autor": json.dumps(synthesis_data),
+    }
+
+    pipeline = Pipeline(mock_config, mock_router)
+    result = await pipeline.run("Schreiben Sie einen Aufsatz über Datenschutz")
+
+    assert result.success, f"Failed: {result.failed_stage}, {result.validation_errors}"
+    assert result.output_path.endswith(".docx")
+    assert Path(result.output_path).exists()
+
+
+@pytest.mark.asyncio
+async def test_pipeline_cascade_fallback(mock_config, cascade_router, tmp_path):
+    """Pipeline succeeds when first backend fails but second works."""
+    mock_config.output.dir = str(tmp_path)
+
+    pipeline = Pipeline(mock_config, cascade_router)
+    result = await pipeline.run(
+        "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit"
+    )
+
+    assert result.success, f"Failed: {result.failed_stage}, {result.validation_errors}"
+    assert len(result.results) == 5
+
+
+@pytest.mark.asyncio
+async def test_pipeline_no_backends(mock_config):
+    """Pipeline fails gracefully when no backends are available."""
+    mock_config.backends = {}
+
+    router = BackendRouter.__new__(BackendRouter)
+    router.config = mock_config
+    router._backends = {}
+    router._cooldowns = {}
+    router._call_counts = {}
+    router._total_cost = 0.0
+
+    pipeline = Pipeline(mock_config, router)
+    result = await pipeline.run("Test")
+
+    assert not result.success
+    assert result.failed_stage == "init"
+    assert "No backends" in result.validation_errors[0]
+
+
+@pytest.mark.asyncio
+async def test_pipeline_tracks_cost(mock_config, mock_router, tmp_path):
+    """Pipeline reports total cost from router."""
+    mock_config.output.dir = str(tmp_path)
+
+    pipeline = Pipeline(mock_config, mock_router)
+    result = await pipeline.run(
+        "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit"
+    )
+
+    assert result.success
+    assert result.total_cost_usd >= 0.0
+    assert result.elapsed_ms >= 0

@@ -138,7 +138,7 @@ DEFAULT_STAGE_RESPONSES = {
              "bullet_points": ["Firewalls und VPN", "Regelmäßige Updates und Backups", "Mitarbeiterschulungen", "Incident Response Plan"],
              "speaker_notes": "Die beste Technik hilft nichts ohne geschulte Mitarbeiter."},
             {"section_id": "section_05", "heading": "Quellen",
-             "content": "",
+             "content": "Verwendete Quellen und Referenzen zur IT-Sicherheit.",
              "bullet_points": ["BSI — Bundesamt für Sicherheit in der Informationstechnik", "OWASP Top 10"],
              "speaker_notes": None},
         ],
@@ -180,3 +180,50 @@ def mock_router(mock_config, mock_backend):
     router._call_counts = {"mock": 0}
     router._total_cost = 0.0
     return router
+
+
+class FailingBackend:
+    """Backend that always raises BackendError."""
+
+    def __init__(self, name: str = "failing"):
+        self.name = name
+        self.is_free = True
+        self.supports_vision = False
+        self.max_context = 8192
+        self.model = "fail-model"
+
+    async def complete(self, messages, temperature=0.3, max_tokens=4096, response_format=None):
+        raise BackendError(f"{self.name} always fails", self.name, retryable=False)
+
+    async def complete_vision(self, messages, temperature=0.3, max_tokens=4096):
+        raise BackendError(f"{self.name} no vision", self.name, retryable=False)
+
+    async def close(self):
+        pass
+
+
+@pytest.fixture
+def cascade_router(mock_config, mock_backend):
+    """Router with two backends: a failing one first, then the working mock."""
+    mock_config.cascade = {
+        "intake": ["failing", "mock"],
+        "plan": ["failing", "mock"],
+        "research": ["failing", "mock"],
+        "synthesize": ["failing", "mock"],
+        "artifact": ["failing", "mock"],
+    }
+    mock_config.backends["failing"] = BackendConfig(name="failing", api_key="test", enabled=True)
+
+    router = BackendRouter.__new__(BackendRouter)
+    router.config = mock_config
+    router._backends = {"failing": FailingBackend(), "mock": mock_backend}
+    router._cooldowns = {}
+    router._call_counts = {"failing": 0, "mock": 0}
+    router._total_cost = 0.0
+    return router
+
+
+@pytest.fixture
+def synthesis_data():
+    """Pre-parsed synthesis data for artifact builder tests."""
+    return json.loads(DEFAULT_STAGE_RESPONSES["Präsentations-Autor"])
