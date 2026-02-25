@@ -20,5 +20,8 @@ ollama = []  # no extra deps, just a config flag
 [project.scripts]
 schulpipeline = "schulpipeline.cli:main"
 
+[tool.setuptools.packages.find]
+include = ["schulpipeline*"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
