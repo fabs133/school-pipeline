@@ -114,7 +114,7 @@ class OpenAICompatibleBackend:
         pass
 
 
-def create_groq(api_key: str, model: str = "llama-3.1-70b-versatile") -> OpenAICompatibleBackend:
+def create_groq(api_key: str, model: str = "llama-3.3-70b-versatile") -> OpenAICompatibleBackend:
     return OpenAICompatibleBackend(
         name="groq",
         api_key=api_key,

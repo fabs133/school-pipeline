@@ -86,9 +86,9 @@ class PipelineConfig:
 # --- Default backend presets ---
 
 BACKEND_DEFAULTS: dict[str, dict[str, Any]] = {
-    "groq": {"model": "llama-3.1-70b-versatile", "base_url": "https://api.groq.com/openai/v1"},
+    "groq": {"model": "llama-3.3-70b-versatile", "base_url": "https://api.groq.com/openai/v1"},
     "mistral": {"model": "mistral-large-latest", "base_url": "https://api.mistral.ai/v1"},
-    "gemini": {"model": "gemini-2.0-flash", "base_url": "https://generativelanguage.googleapis.com"},
+    "gemini": {"model": "gemini-2.5-flash", "base_url": "https://generativelanguage.googleapis.com"},
     "openai": {"model": "gpt-4o-mini", "base_url": "https://api.openai.com/v1"},
     "ollama": {"model": "mistral:7b", "base_url": "http://localhost:11434"},
 }

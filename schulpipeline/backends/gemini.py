@@ -18,11 +18,59 @@ from .base import BackendError, LLMResponse, RateLimitError
 class GeminiBackend:
     name: str = "gemini"
     api_key: str = ""
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-2.5-flash"
     base_url: str = "https://generativelanguage.googleapis.com"
     is_free: bool = True
     supports_vision: bool = True
     max_context: int = 1_048_576
+
+    def _convert_messages(self, messages: list[dict[str, Any]]) -> tuple[str, list[dict]]:
+        """Convert OpenAI-style messages to Gemini format.
+
+        Returns (system_text, contents) where contents is Gemini's format.
+        """
+        system = ""
+        contents = []
+
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+
+            if role == "system":
+                system = content if isinstance(content, str) else str(content)
+                continue
+
+            gemini_role = "model" if role == "assistant" else "user"
+
+            if isinstance(content, str):
+                contents.append({
+                    "role": gemini_role,
+                    "parts": [{"text": content}],
+                })
+            elif isinstance(content, list):
+                # Multimodal content (text + images)
+                parts = []
+                for item in content:
+                    if isinstance(item, str):
+                        parts.append({"text": item})
+                    elif isinstance(item, dict):
+                        if item.get("type") == "text":
+                            parts.append({"text": item["text"]})
+                        elif item.get("type") == "image_url":
+                            url = item["image_url"]["url"]
+                            if url.startswith("data:"):
+                                # data:image/jpeg;base64,... -> inline_data
+                                mime, _, b64 = url.partition(";base64,")
+                                mime = mime.replace("data:", "")
+                                parts.append({
+                                    "inlineData": {
+                                        "mimeType": mime,
+                                        "data": b64,
+                                    }
+                                })
+                contents.append({"role": gemini_role, "parts": parts})
+
+        return system, contents
 
     def _sync_generate(
         self,
@@ -114,5 +162,5 @@ class GeminiBackend:
         pass
 
 
-def create_gemini(api_key: str, model: str = "gemini-2.0-flash") -> GeminiBackend:
+def create_gemini(api_key: str, model: str = "gemini-2.5-flash") -> GeminiBackend:
     return GeminiBackend(api_key=api_key, model=model)

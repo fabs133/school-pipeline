@@ -7,10 +7,10 @@
 backends:
   groq:
     api_key: ${GROQ_API_KEY}
-    model: "llama-3.1-70b-versatile"
+    model: "llama-3.3-70b-versatile"
   gemini:
     api_key: ${GEMINI_API_KEY}
-    model: "gemini-2.0-flash"
+    model: "gemini-2.5-flash"
   # Optional paid backends (uncomment if needed):
   # mistral:
   #   api_key: ${MISTRAL_API_KEY}
