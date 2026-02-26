@@ -54,6 +54,7 @@ def _build_plan_prompt(preset=None) -> str:
 class PlanStage(BaseStage):
     name = "plan"
     spec_path = "specs/plan.json"
+    required_context = frozenset({"intake"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         intake = context["intake"]

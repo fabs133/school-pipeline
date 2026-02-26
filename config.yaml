@@ -38,6 +38,21 @@ output:
   default_format: "pptx"
   language: "de"
 
+# Style & Visual System
+style: clean                           # clean, modern, minimal, school, corporate, dark
+visuals: true                          # Enable visual placeholders on slides
+# Override individual style settings:
+# style:
+#   base: clean
+#   colors:
+#     primary: "#2D5F2D"
+#   tone:
+#     register: casual
+# visuals:
+#   enabled: true
+#   max_per_slide: 2
+#   placeholder_style: outline
+
 logging:
   level: "INFO"
   file: ".schulpipeline/pipeline.log"

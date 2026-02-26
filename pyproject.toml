@@ -11,10 +11,12 @@ dependencies = [
     "python-docx>=1.1",
     "beautifulsoup4>=4.12",
     "Pillow>=10.0",
+    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4", "pre-commit>=3.5"]
+pdf = ["pdfplumber>=0.9"]
 ollama = []  # no extra deps, just a config flag
 
 [project.scripts]
@@ -22,6 +24,14 @@ schulpipeline = "schulpipeline.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["schulpipeline*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

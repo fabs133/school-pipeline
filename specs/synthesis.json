@@ -19,7 +19,26 @@
             "type": "array",
             "items": { "type": "string" }
           },
-          "speaker_notes": { "type": ["string", "null"] }
+          "speaker_notes": { "type": ["string", "null"] },
+          "visuals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "intent"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["diagram", "photo", "icon", "chart", "screenshot"]
+                },
+                "intent": { "type": "string" },
+                "placement": {
+                  "type": "string",
+                  "enum": ["right", "center"]
+                },
+                "search_hint": { "type": "string" }
+              }
+            }
+          }
         }
       }
     },

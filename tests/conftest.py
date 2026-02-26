@@ -231,3 +231,40 @@ def cascade_router(mock_config, mock_backend):
 def synthesis_data():
     """Pre-parsed synthesis data for artifact builder tests."""
     return json.loads(DEFAULT_STAGE_RESPONSES["Präsentations-Autor"])
+
+
+@pytest.fixture
+def synthesis_data_with_visuals():
+    """Synthesis data that includes visual slot data on a content slide."""
+    data = json.loads(DEFAULT_STAGE_RESPONSES["Präsentations-Autor"])
+    data["sections"][2]["visuals"] = [{
+        "type": "diagram",
+        "intent": "Übersicht der häufigsten Angriffsarten",
+        "placement": "right",
+        "search_hint": "cyber attack types infographic",
+    }]
+    return data
+
+
+@pytest.fixture
+def clean_style():
+    from schulpipeline.styles import DEFAULT_STYLE
+    return DEFAULT_STYLE
+
+
+@pytest.fixture
+def modern_style():
+    from schulpipeline.styles import STYLE_PRESETS
+    return STYLE_PRESETS["modern"]
+
+
+@pytest.fixture
+def visual_config_enabled():
+    from schulpipeline.styles import DEFAULT_VISUAL_SLOTS
+    return DEFAULT_VISUAL_SLOTS
+
+
+@pytest.fixture
+def visual_config_disabled():
+    from schulpipeline.styles import DISABLED_VISUAL_SLOTS
+    return DISABLED_VISUAL_SLOTS

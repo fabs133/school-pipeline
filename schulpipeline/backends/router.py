@@ -20,6 +20,7 @@ from .openai_compat import (
     OpenAICompatibleBackend,
     create_groq,
     create_mistral,
+    create_ollama,
     create_openai,
 )
 
@@ -32,6 +33,7 @@ BACKEND_FACTORIES: dict[str, Any] = {
     "mistral": lambda cfg: create_mistral(cfg.api_key, cfg.model),
     "gemini": lambda cfg: create_gemini(cfg.api_key, cfg.model),
     "openai": lambda cfg: create_openai(cfg.api_key, cfg.model),
+    "ollama": lambda cfg: create_ollama(cfg.api_key, cfg.model, cfg.base_url),
 }
 
 

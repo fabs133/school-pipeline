@@ -114,10 +114,14 @@ def setup_logging(
         stderr_handler.setFormatter(HumanFormatter())
     root.addHandler(stderr_handler)
 
-    # File handler — always JSON for machine parsing
+    # File handler — always JSON for machine parsing, with rotation
     if log_file:
+        from logging.handlers import RotatingFileHandler
+
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8",
+        )
         file_handler.setFormatter(JsonFormatter())
         root.addHandler(file_handler)

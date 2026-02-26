@@ -34,7 +34,6 @@ Regeln:
 - speaker_notes: Was man zu dieser Folie sagen würde (2-4 Sätze)
 - Titelfolie: nur heading + content, keine bullet_points
 - Quellenfolie: bullet_points = Liste der Quellen
-- Sprache: Deutsch, sachlich, auf Berufsschul-Niveau
 - Antworte NUR mit JSON
 """
 
@@ -60,7 +59,6 @@ Antworte ausschließlich mit validem JSON:
 Regeln:
 - content: Vollständige Absätze, kein Stichpunktstil
 - Einleitung → Hauptteil → Fazit Struktur einhalten
-- Sachlich, klar, auf Berufsschul-Niveau
 - Antworte NUR mit JSON
 """
 
@@ -90,9 +88,59 @@ Regeln:
 """
 
 
+# Default tone line used when no style is in context (backward compat)
+_DEFAULT_TONE_LINE = "- Sprache: Deutsch, sachlich, auf Berufsschul-Niveau"
+
+
+def _build_tone_block(tone) -> str:
+    """Build a tone instruction block from a ToneConfig."""
+    from ..styles import _bullet_instruction, _sentence_instruction
+
+    block = f"""
+Stilanweisungen:
+- Register: {tone.register}
+- Stichpunkte: {_bullet_instruction(tone.bullet_style)}
+- Satzlänge: {_sentence_instruction(tone.sentence_length)}
+- Vokabular: {tone.vocabulary_level}"""
+    if tone.instructions:
+        block += f"\n{tone.instructions}"
+    return block
+
+
+def _build_visual_instruction(config) -> str:
+    """Build the visual slot instruction block for the synthesis prompt."""
+    allowed = ", ".join(config.allowed_types)
+    max_n = config.max_per_slide
+
+    return f"""
+
+Für jede Folie/Sektion: Überlege ob ein visuelles Element den Inhalt
+unterstützen würde. Wenn ja, füge ein "visuals" Array hinzu:
+
+"visuals": [
+  {{
+    "type": "<{allowed}>",
+    "intent": "Was das Bild zeigen soll (1 Satz)",
+    "placement": "right|center",
+    "search_hint": "Englischer Suchbegriff für Bildersuche"
+  }}
+]
+
+Regeln:
+- Nicht jede Folie braucht ein Visual — nur wo es den Inhalt stärkt
+- Titelfolie und Quellenfolie: kein Visual
+- Maximal {max_n} Visual(s) pro Folie
+- type "diagram" für Prozesse/Abläufe/Strukturen
+- type "chart" für Daten/Statistiken/Vergleiche
+- type "photo" für reale Objekte/Orte/Personen
+- type "icon" für abstrakte Konzepte
+- type "screenshot" für Software/UI-Beispiele"""
+
+
 class SynthesizeStage(BaseStage):
     name = "synthesize"
     spec_path = "specs/synthesis.json"
+    required_context = frozenset({"plan", "research", "intake"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         plan = context["plan"]
@@ -107,6 +155,18 @@ class SynthesizeStage(BaseStage):
             "docx": SYNTHESIZE_DOCX_PROMPT,
             "md": SYNTHESIZE_MD_PROMPT,
         }.get(artifact_type, SYNTHESIZE_MD_PROMPT)
+
+        # Tone: from style if available, else hardcoded default
+        style = context.get("style")
+        if style:
+            prompt += _build_tone_block(style.tone)
+        else:
+            prompt += f"\n{_DEFAULT_TONE_LINE}"
+
+        # Visual slot instruction (only if enabled)
+        visual_slots = context.get("visual_slots")
+        if visual_slots and visual_slots.enabled:
+            prompt += _build_visual_instruction(visual_slots)
 
         # Inject preset context
         if preset:
@@ -142,11 +202,15 @@ class SynthesizeStage(BaseStage):
             {"role": "user", "content": synthesis_input},
         ]
 
+        # Scale max_tokens with section count to avoid truncation on large presentations
+        section_count = len(plan.get("sections", []))
+        dynamic_max = min(max(8192, section_count * 800 + 1024), 16384)
+
         response = await backend.complete(
             stage=self.name,
             messages=messages,
             temperature=0.3,
-            max_tokens=8192,
+            max_tokens=dynamic_max,
             response_format={"type": "json_object"},
         )
 

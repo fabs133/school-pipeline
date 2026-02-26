@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,7 @@ from .base import BaseStage
 class ArtifactStage(BaseStage):
     name = "artifact"
     spec_path = "specs/artifact.json"
+    required_context = frozenset({"synthesize", "plan"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         synthesis = context["synthesize"]
@@ -37,12 +39,17 @@ class ArtifactStage(BaseStage):
         filename = f"{safe_title}.{artifact_type}"
         output_path = output_dir / filename
 
+        # Resolve style and visual config from pipeline context
+        from ..styles import DEFAULT_STYLE, DISABLED_VISUAL_SLOTS
+        style = context.get("style", DEFAULT_STYLE)
+        visual_config = context.get("visual_slots", DISABLED_VISUAL_SLOTS)
+
         if artifact_type == "pptx":
             from ..artifacts.pptx_builder import build_pptx
-            build_pptx(synthesis, output_path)
+            build_pptx(synthesis, output_path, style.visual, visual_config)
         elif artifact_type == "docx":
             from ..artifacts.docx_builder import build_docx
-            build_docx(synthesis, output_path)
+            build_docx(synthesis, output_path, style.visual, visual_config)
         elif artifact_type == "md":
             from ..artifacts.md_builder import build_md
             build_md(synthesis, output_path)
@@ -118,10 +125,14 @@ class ArtifactStage(BaseStage):
 
 def _safe_filename(title: str) -> str:
     """Convert title to a safe filename."""
-    # Replace umlauts
+    # Replace umlauts explicitly (preserves German conventions)
     replacements = {"ä": "ae", "ö": "oe", "ü": "ue", "Ä": "Ae", "Ö": "Oe", "Ü": "Ue", "ß": "ss"}
     for old, new in replacements.items():
         title = title.replace(old, new)
+
+    # Decompose accented characters: é → e, ñ → n, etc.
+    title = unicodedata.normalize("NFKD", title)
+    title = "".join(c for c in title if not unicodedata.combining(c))
 
     # Keep only safe chars
     safe = "".join(c if c.isalnum() or c in ("-", "_", " ") else "" for c in title)

@@ -36,3 +36,14 @@ Data_School_Tasks/
 _manifest.json
 _manifest.yaml
 _scan_result.txt
+
+# Temp scripts (development debugging)
+_*.py
+_*.txt
+
+# Package artifacts
+*.zip
+
+# Ruff / Pytest
+.ruff_cache/
+.pytest_cache/

@@ -62,15 +62,30 @@ class Stage(Protocol):
     ) -> StageResult: ...
 
 
+class MissingContextError(Exception):
+    """Raised when required context keys are missing before stage execution."""
+
+    def __init__(self, stage_name: str, missing_keys: set[str]):
+        self.stage_name = stage_name
+        self.missing_keys = missing_keys
+        keys_str = ", ".join(sorted(missing_keys))
+        super().__init__(
+            f"Stage '{stage_name}' requires context keys [{keys_str}] "
+            f"which are not present. A prior stage may not have completed successfully."
+        )
+
+
 class BaseStage:
     """Optional convenience base with timing and error wrapping."""
 
     name: str = ""
     spec_path: str = ""
+    required_context: frozenset[str] = frozenset()
 
     async def run(self, context: dict[str, Any], backend: Any, config: Any) -> StageResult:
         t0 = time.monotonic()
         try:
+            self._validate_context(context)
             data = await self.execute(context, backend, config)
             elapsed = int((time.monotonic() - t0) * 1000)
             return StageResult(
@@ -87,6 +102,14 @@ class BaseStage:
                 errors=[str(e)],
                 metadata={"elapsed_ms": elapsed},
             )
+
+    def _validate_context(self, context: dict[str, Any]) -> None:
+        """Check that all required context keys are present."""
+        if not self.required_context:
+            return
+        missing = self.required_context - context.keys()
+        if missing:
+            raise MissingContextError(self.name, missing)
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         raise NotImplementedError

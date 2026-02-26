@@ -148,3 +148,20 @@ def create_openai(api_key: str, model: str = "gpt-4o-mini") -> OpenAICompatibleB
         supports_vision=True,
         max_context=128_000,
     )
+
+
+def create_ollama(
+    api_key: str = "",
+    model: str = "mistral:7b",
+    base_url: str = "http://localhost:11434",
+) -> OpenAICompatibleBackend:
+    """Create an Ollama backend. api_key is ignored (Ollama has no auth)."""
+    return OpenAICompatibleBackend(
+        name="ollama",
+        api_key="ollama",
+        model=model,
+        base_url=f"{base_url.rstrip('/')}/v1",
+        is_free=True,
+        supports_vision=False,
+        max_context=32_768,
+    )

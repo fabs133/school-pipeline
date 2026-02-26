@@ -6,7 +6,9 @@ from schulpipeline.backends.openai_compat import (
     create_groq,
     create_mistral,
     create_openai,
+    create_ollama,
 )
+from schulpipeline.backends.router import BACKEND_FACTORIES
 from schulpipeline.backends.gemini import GeminiBackend, create_gemini
 
 
@@ -122,3 +124,25 @@ def test_openai_compat_cost_estimation():
     assert cost > 0
     # (1000 * 0.15 + 500 * 0.6) / 1_000_000 = 0.00045
     assert abs(cost - 0.00045) < 0.0001
+
+
+# --- Ollama backend ---
+
+def test_create_ollama():
+    b = create_ollama()
+    assert b.name == "ollama"
+    assert b.api_key == "ollama"
+    assert b.is_free is True
+    assert b.supports_vision is False
+    assert "/v1" in b.base_url
+    assert b.model == "mistral:7b"
+
+
+def test_create_ollama_custom():
+    b = create_ollama(model="llama3:8b", base_url="http://myhost:11434")
+    assert b.model == "llama3:8b"
+    assert b.base_url == "http://myhost:11434/v1"
+
+
+def test_ollama_in_backend_factories():
+    assert "ollama" in BACKEND_FACTORIES

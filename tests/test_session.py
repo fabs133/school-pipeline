@@ -201,3 +201,40 @@ def test_store_find_latest(tmp_path):
 def test_store_find_latest_empty(tmp_path):
     store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
     assert store.find_latest() is None
+
+
+# ============================================================
+# Session purge
+# ============================================================
+
+def test_session_purge_by_count(tmp_path):
+    """Purge removes sessions beyond max_count (oldest first)."""
+    store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
+    sessions = []
+    for i in range(5):
+        s = store.create(task_input=f"Task {i}")
+        s.status = "completed"
+        store.save(s)
+        sessions.append(s)
+
+    removed = store.purge(max_age_days=9999, max_count=3)
+    assert removed == 2
+    remaining = store.list_sessions()
+    assert len(remaining) == 3
+
+
+def test_session_purge_keeps_running(tmp_path):
+    """Running sessions are never purged even if they exceed max_count."""
+    store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
+
+    for i in range(4):
+        s = store.create(task_input=f"Task {i}")
+        s.status = "running" if i == 0 else "completed"
+        store.save(s)
+
+    removed = store.purge(max_age_days=9999, max_count=2)
+    # The running session is protected; only completed sessions beyond count are removed
+    remaining = store.list_sessions()
+    remaining_ids = {e["id"] for e in remaining}
+    running = [e for e in remaining if e.get("status") == "running"]
+    assert len(running) == 1  # running session preserved
