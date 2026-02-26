@@ -21,11 +21,10 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-
 
 # ============================================================
 # Session Model
@@ -392,7 +391,7 @@ class SessionRunner:
 
         Skips already-completed stages. Saves after each stage.
         """
-        from .stages import IntakeStage, PlanStage, ResearchStage, SynthesizeStage, ArtifactStage
+        from .stages import ArtifactStage, IntakeStage, PlanStage, ResearchStage, SynthesizeStage
         from .stages.base import validate_against_spec
 
         all_stages = [

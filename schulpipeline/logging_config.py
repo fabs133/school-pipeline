@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 # Thread-local storage for correlation context
 _context = threading.local()
 

@@ -67,4 +67,4 @@ async def test_groq_json_response(live_router, require_groq):
 async def test_router_reports_available_backends(live_router):
     """Router discovers at least one backend from env."""
     available = live_router.available_backends
-    assert len(available) >= 1, f"No backends discovered. Check .env file."
+    assert len(available) >= 1, "No backends discovered. Check .env file."

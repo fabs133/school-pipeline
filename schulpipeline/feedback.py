@@ -33,15 +33,13 @@ Data flow:
 
 from __future__ import annotations
 
-import json
-import time
 import hashlib
+import json
 import statistics
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
 
 # ============================================================
 # Feedback Record — what we collect per run
@@ -341,10 +339,8 @@ def build_feedback_from_result(
     req_counts = req_data.get("requirement_count", {})
 
     # Extract amendment metrics
-    amendment_data = {}
     for r in results:
         if r.stage == "amendments" and r.success:
-            amendment_data = r.data
             break
 
     # Collect backends used
@@ -507,7 +503,7 @@ def print_user_stats(store: FeedbackStore) -> None:
     print(f"  Kostenlose Runs:       {stats.pct_free_runs:.0%}")
 
     if stats.avg_quality_by_flow:
-        print(f"\n  Ø Qualität nach Typ:")
+        print("\n  Ø Qualität nach Typ:")
         for flow, avg in stats.avg_quality_by_flow.items():
             stars = "★" * round(avg) + "☆" * (5 - round(avg))
             print(f"    {flow:20s} {stars} ({avg:.1f})")
@@ -516,7 +512,7 @@ def print_user_stats(store: FeedbackStore) -> None:
         print(f"\n  Ø Note (abgegebene):   {stats.avg_grade_when_submitted:.1f}")
 
     if stats.avg_audit_completeness > 0:
-        print(f"\n  📋 Aufgabenqualität (aus Audits):")
+        print("\n  📋 Aufgabenqualität (aus Audits):")
         print(f"    Ø Vollständigkeit:   {stats.avg_audit_completeness:.0%}")
         print(f"    Ø Machbarkeit:       {stats.avg_audit_feasibility:.0%}")
         print(f"    Ø Widersprüche:      {stats.avg_contradictions_per_assignment:.1f} pro Aufgabe")

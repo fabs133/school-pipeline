@@ -1,7 +1,8 @@
 """Live end-to-end pipeline tests — full runs producing real files."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from schulpipeline.pipeline import Pipeline
 

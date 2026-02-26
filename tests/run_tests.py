@@ -15,9 +15,8 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from schulpipeline.config import load_config, BackendConfig, PipelineConfig, OutputConfig, ResearchConfig
-from schulpipeline.backends.base import LLMResponse, BackendError
-
+from schulpipeline.backends.base import LLMResponse
+from schulpipeline.config import BackendConfig, OutputConfig, PipelineConfig, ResearchConfig, load_config
 
 # --- Mock Backend (inline for standalone use) ---
 
@@ -557,7 +556,6 @@ class TestFullPipeline(unittest.TestCase):
 
         config, router = make_mock_router()
         mock = router._backends["mock"]
-        original_complete = mock.complete
 
         async def bad_complete(*args, **kwargs):
             return LLMResponse(content="not json!!!", model="mock", backend_name="mock")
@@ -680,7 +678,7 @@ class TestSession(unittest.TestCase):
         store = SessionStore(sessions_dir=os.path.join(self.tmpdir, "sessions"))
 
         s1 = store.create(task_input="Task 1", subject="it_sicherheit")
-        s2 = store.create(task_input="Task 2", subject="wirtschaft")
+        store.create(task_input="Task 2", subject="wirtschaft")
         s1.status = "completed"
         store.save(s1)
 
@@ -741,8 +739,8 @@ class TestSession(unittest.TestCase):
 
     def test_session_runner_full(self):
         """Full pipeline through session runner."""
-        from schulpipeline.session import SessionStore, SessionRunner
         from schulpipeline.pipeline import Pipeline
+        from schulpipeline.session import SessionRunner, SessionStore
 
         config, router = make_mock_router()
         config.output.dir = self.tmpdir
@@ -764,8 +762,8 @@ class TestSession(unittest.TestCase):
 
     def test_session_runner_resume(self):
         """Resume from a failed session after fixing the issue."""
-        from schulpipeline.session import SessionStore, SessionRunner, StageSnapshot
         from schulpipeline.pipeline import Pipeline
+        from schulpipeline.session import SessionRunner, SessionStore, StageSnapshot
 
         config, router = make_mock_router()
         config.output.dir = self.tmpdir
@@ -795,8 +793,8 @@ class TestSession(unittest.TestCase):
 
     def test_session_retry_from_stage(self):
         """Retry from a specific stage, dropping later stages."""
-        from schulpipeline.session import SessionStore, SessionRunner, StageSnapshot
         from schulpipeline.pipeline import Pipeline
+        from schulpipeline.session import SessionRunner, SessionStore, StageSnapshot
 
         config, router = make_mock_router()
         config.output.dir = self.tmpdir
@@ -862,7 +860,7 @@ class TestAgents(unittest.TestCase):
         self.assertIn("flask", spec.dependencies)
 
     def test_project_spec_to_prompt(self):
-        from schulpipeline.agents import ProjectSpec, ModuleSpec, FileSpec
+        from schulpipeline.agents import FileSpec, ModuleSpec, ProjectSpec
 
         spec = ProjectSpec(
             title="Test Project",
@@ -886,7 +884,7 @@ class TestAgents(unittest.TestCase):
 
     def test_local_llm_agent(self):
         """Local LLM agent generates files."""
-        from schulpipeline.agents import LocalLLMAgent, ProjectSpec, ModuleSpec, FileSpec
+        from schulpipeline.agents import FileSpec, LocalLLMAgent, ModuleSpec, ProjectSpec
 
         _, router = make_mock_router()
         # Override cascade to include agent_codegen stage
@@ -1094,9 +1092,8 @@ class TestWorksheet(unittest.TestCase):
 
     def test_pipeline_selects_worksheet_stages(self):
         """Pipeline uses decompose→solve flow for worksheet presets."""
-        from schulpipeline.presets import resolve_preset
         from schulpipeline.pipeline import Pipeline
-        from schulpipeline.worksheet import DecomposeStage, SolveStage
+        from schulpipeline.presets import resolve_preset
 
         config, router = make_mock_router()
         pipeline = Pipeline(config, router)
@@ -1110,8 +1107,8 @@ class TestWorksheet(unittest.TestCase):
 
     def test_pipeline_standard_stages_for_presentation(self):
         """Pipeline still uses standard stages for non-worksheet presets."""
-        from schulpipeline.presets import resolve_preset
         from schulpipeline.pipeline import Pipeline
+        from schulpipeline.presets import resolve_preset
 
         config, router = make_mock_router()
         pipeline = Pipeline(config, router)
@@ -1208,8 +1205,9 @@ class TestDocuments(unittest.TestCase):
 
     def test_apply_to_docx(self):
         """Template application fills DOCX fields while preserving layout."""
-        from schulpipeline.documents import apply_to_docx
         from docx import Document
+
+        from schulpipeline.documents import apply_to_docx
 
         # Create a simple template
         with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as f:
@@ -1237,7 +1235,7 @@ class TestDocuments(unittest.TestCase):
                 {"label": "{{SPRACHE}}", "value": "Python"},
             ]
 
-            warnings = apply_to_docx(template_path, filled_fields, output_path)
+            apply_to_docx(template_path, filled_fields, output_path)
 
             # Verify output exists and is valid
             self.assertTrue(Path(output_path).exists())
@@ -1258,9 +1256,10 @@ class TestDocuments(unittest.TestCase):
 
     def test_apply_to_pptx(self):
         """Template application fills PPTX placeholders."""
-        from schulpipeline.documents import apply_to_pptx
         from pptx import Presentation
         from pptx.util import Inches
+
+        from schulpipeline.documents import apply_to_pptx
 
         with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as f:
             template_path = f.name
@@ -1278,7 +1277,7 @@ class TestDocuments(unittest.TestCase):
                 {"label": "{{TITLE}}", "value": "Lagerverwaltung v2.0"},
             ]
 
-            warnings = apply_to_pptx(template_path, filled_fields, output_path)
+            apply_to_pptx(template_path, filled_fields, output_path)
 
             result_prs = Presentation(output_path)
             slide_text = ""
@@ -1578,8 +1577,8 @@ class TestAudit(unittest.TestCase):
 
     def test_audit_preset(self):
         """Audit preset resolves and selects correct pipeline stages."""
-        from schulpipeline.presets import resolve_preset, resolve_quick
         from schulpipeline.pipeline import Pipeline
+        from schulpipeline.presets import resolve_preset, resolve_quick
 
         preset = resolve_preset("audit", "programmierung")
         self.assertEqual(preset.output_format, "audit")
@@ -1596,8 +1595,8 @@ class TestAudit(unittest.TestCase):
 
     def test_template_mode_includes_audit(self):
         """Template fill flow now includes audit as intermediate step."""
-        from schulpipeline.presets import resolve_preset
         from schulpipeline.pipeline import Pipeline
+        from schulpipeline.presets import resolve_preset
 
         config, router = make_mock_router()
         pipeline = Pipeline(config, router)
@@ -1832,8 +1831,8 @@ class TestRequirements(unittest.TestCase):
 
     def test_requirements_preset_and_stages(self):
         """Requirements report preset selects correct pipeline stages."""
-        from schulpipeline.presets import resolve_preset, resolve_quick
         from schulpipeline.pipeline import Pipeline
+        from schulpipeline.presets import resolve_preset, resolve_quick
 
         preset = resolve_preset("anforderungen", "programmierung")
         self.assertEqual(preset.output_format, "requirements_report")
@@ -1880,7 +1879,7 @@ class TestFeedback(unittest.TestCase):
 
     def test_save_and_load_record(self):
         """Feedback records persist correctly."""
-        from schulpipeline.feedback import FeedbackStore, FeedbackRecord
+        from schulpipeline.feedback import FeedbackRecord, FeedbackStore
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
         record = FeedbackRecord(
@@ -1908,7 +1907,7 @@ class TestFeedback(unittest.TestCase):
 
     def test_update_record(self):
         """Records can be updated (e.g. adding grade later)."""
-        from schulpipeline.feedback import FeedbackStore, FeedbackRecord
+        from schulpipeline.feedback import FeedbackRecord, FeedbackStore
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
         record = FeedbackRecord(
@@ -1930,7 +1929,7 @@ class TestFeedback(unittest.TestCase):
 
     def test_aggregate_stats(self):
         """Aggregates computed correctly across records."""
-        from schulpipeline.feedback import FeedbackStore, FeedbackRecord
+        from schulpipeline.feedback import FeedbackRecord, FeedbackStore
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
 
@@ -1958,7 +1957,7 @@ class TestFeedback(unittest.TestCase):
 
     def test_delete_all(self):
         """Delete all wipes everything."""
-        from schulpipeline.feedback import FeedbackStore, FeedbackRecord
+        from schulpipeline.feedback import FeedbackRecord, FeedbackStore
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
         for i in range(3):
@@ -1976,7 +1975,7 @@ class TestFeedback(unittest.TestCase):
 
     def test_research_export(self):
         """Research export contains only aggregates, no PII."""
-        from schulpipeline.feedback import FeedbackStore, FeedbackRecord, export_for_research
+        from schulpipeline.feedback import FeedbackRecord, FeedbackStore, export_for_research
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
 
@@ -2021,7 +2020,7 @@ class TestFeedback(unittest.TestCase):
 
     def test_research_export_md(self):
         """Markdown export is readable."""
-        from schulpipeline.feedback import FeedbackStore, FeedbackRecord, export_for_research, format_research_export_md
+        from schulpipeline.feedback import FeedbackRecord, FeedbackStore, export_for_research, format_research_export_md
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
         store.save_record(FeedbackRecord(
@@ -2076,5 +2075,5 @@ class TestFeedback(unittest.TestCase):
 
 if __name__ == "__main__":
     print(f"Python {sys.version}")
-    print(f"Running schulpipeline tests...\n")
+    print("Running schulpipeline tests...\n")
     unittest.main(verbosity=2)

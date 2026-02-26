@@ -6,12 +6,14 @@ from pathlib import Path
 from typing import Any
 
 from docx import Document
-from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt
 
 from ..styles import (
-    VisualStyle, VisualSlotConfig,
-    DEFAULT_STYLE, DISABLED_VISUAL_SLOTS,
+    DEFAULT_STYLE,
+    DISABLED_VISUAL_SLOTS,
+    VisualSlotConfig,
+    VisualStyle,
     _to_docx_rgb,
 )
 

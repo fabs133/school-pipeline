@@ -1,13 +1,11 @@
 """Tests for artifact builders — PPTX, DOCX, MD file generation."""
 
-from pathlib import Path
 
 from pptx.util import Emu
 
-from schulpipeline.artifacts.pptx_builder import build_pptx
 from schulpipeline.artifacts.docx_builder import build_docx
 from schulpipeline.artifacts.md_builder import build_md
-
+from schulpipeline.artifacts.pptx_builder import build_pptx
 
 # ============================================================
 # PPTX Builder

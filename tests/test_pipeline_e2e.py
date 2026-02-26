@@ -1,10 +1,11 @@
 """End-to-end pipeline test with mock backend."""
 
-import pytest
 from pathlib import Path
 
-from schulpipeline.pipeline import Pipeline
+import pytest
+
 from schulpipeline.backends.router import BackendRouter
+from schulpipeline.pipeline import Pipeline
 
 
 @pytest.mark.asyncio
@@ -31,8 +32,9 @@ async def test_full_pipeline_text_to_md(mock_config, mock_router, tmp_path):
     mock_config.output.default_format = "md"
 
     # Override intake response to use md format
-    from tests.conftest import MockBackend, DEFAULT_STAGE_RESPONSES
     import json
+
+    from tests.conftest import DEFAULT_STAGE_RESPONSES
 
     intake_data = json.loads(DEFAULT_STAGE_RESPONSES["Aufgaben-Parser"])
     intake_data["constraints"]["format"] = "md"
@@ -91,8 +93,9 @@ async def test_full_pipeline_text_to_docx(mock_config, mock_router, tmp_path):
     """Full pipeline: text input -> DOCX output."""
     mock_config.output.dir = str(tmp_path)
 
-    from tests.conftest import DEFAULT_STAGE_RESPONSES
     import json
+
+    from tests.conftest import DEFAULT_STAGE_RESPONSES
 
     intake_data = json.loads(DEFAULT_STAGE_RESPONSES["Aufgaben-Parser"])
     intake_data["constraints"]["format"] = "docx"

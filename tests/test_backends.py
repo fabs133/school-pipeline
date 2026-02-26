@@ -1,16 +1,15 @@
 """Tests for backend base types and factory functions."""
 
-from schulpipeline.backends.base import LLMResponse, BackendError, RateLimitError, Backend
+from schulpipeline.backends.base import Backend, BackendError, LLMResponse, RateLimitError
+from schulpipeline.backends.gemini import GeminiBackend, create_gemini
 from schulpipeline.backends.openai_compat import (
     OpenAICompatibleBackend,
     create_groq,
     create_mistral,
-    create_openai,
     create_ollama,
+    create_openai,
 )
 from schulpipeline.backends.router import BACKEND_FACTORIES
-from schulpipeline.backends.gemini import GeminiBackend, create_gemini
-
 
 # --- LLMResponse ---
 

@@ -49,7 +49,6 @@ from typing import Any
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
 
-
 # ============================================================
 # Data Model
 # ============================================================
@@ -160,7 +159,7 @@ class ClassifyReportStage(BaseStage):
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         classified = context.get("classify_docs", {})
         audit = context.get("audit", {})
-        preset = context.get("preset")
+        _preset = context.get("preset")  # reserved for future use
         documents = classified.get("documents", [])
 
         # Build document content for LLM
@@ -281,7 +280,7 @@ class AmendmentsStage(BaseStage):
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         audit = context.get("audit", {})
         classify_report = context.get("classify_report", {})
-        preset = context.get("preset")
+        _preset = context.get("preset")  # reserved for future use
 
         findings = audit.get("findings", [])
         requirements = classify_report.get("requirements", [])
@@ -456,8 +455,8 @@ def format_report_as_md(report: dict[str, Any]) -> str:
 
     counts = part_a.get("counts", {})
     if counts:
-        lines.append(f"| Status | Anzahl |")
-        lines.append(f"|---|---|")
+        lines.append("| Status | Anzahl |")
+        lines.append("|---|---|")
         for status in ["clear", "ambiguous", "contradicted", "gap"]:
             label = {"clear": "Eindeutig", "ambiguous": "Mehrdeutig",
                      "contradicted": "Widersprüchlich", "gap": "Fehlend"}.get(status, status)
@@ -514,7 +513,7 @@ def format_report_as_md(report: dict[str, Any]) -> str:
 
         alts = amd.get("alternatives_considered", [])
         if alts:
-            lines.append(f"*Verworfene Alternativen:*")
+            lines.append("*Verworfene Alternativen:*")
             for alt in alts:
                 lines.append(f"  - {alt}")
         lines.append("")
@@ -559,8 +558,7 @@ def format_report_as_md(report: dict[str, Any]) -> str:
 def format_report_as_docx(report: dict[str, Any], output_path) -> None:
     """Format the three-part report as DOCX."""
     from docx import Document
-    from docx.shared import Pt, RGBColor, Cm
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt, RGBColor
 
     doc = Document()
     style = doc.styles["Normal"]

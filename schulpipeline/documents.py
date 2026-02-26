@@ -34,14 +34,12 @@ from __future__ import annotations
 
 import json
 import re
-import copy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
-
 
 # ============================================================
 # Document Role Model
@@ -162,7 +160,7 @@ class ClassifyDocsStage(BaseStage):
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         documents = context.get("documents", [])
-        preset = context.get("preset")
+        _preset = context.get("preset")  # reserved for future use
 
         # Build document listing for the LLM
         doc_listing = []
@@ -286,23 +284,23 @@ class FillTemplateStage(BaseStage):
         # Build context for the LLM
         context_parts = []
         context_parts.append(f"Template: {template.get('filename', '?')}")
-        context_parts.append(f"\nFelder zum Ausfüllen:")
+        context_parts.append("\nFelder zum Ausfüllen:")
         for f in fields:
             limit = f" (max {f['max_length']} Zeichen)" if f.get('max_length') else ""
             context_parts.append(f"  - {f['label']}: {f['field_type']}{limit}")
             if f.get('constraints'):
                 context_parts.append(f"    Einschränkungen: {', '.join(f['constraints'])}")
 
-        context_parts.append(f"\nVerfügbare Informationen:")
+        context_parts.append("\nVerfügbare Informationen:")
         context_parts.append(json.dumps(source_info, ensure_ascii=False, indent=2)[:3000])
 
         if constraints:
-            context_parts.append(f"\nFormat-Einschränkungen:")
+            context_parts.append("\nFormat-Einschränkungen:")
             for c in constraints:
                 context_parts.append(f"  - {c}")
 
         if contradictions:
-            context_parts.append(f"\nWidersprüche (beachten!):")
+            context_parts.append("\nWidersprüche (beachten!):")
             for c in contradictions:
                 context_parts.append(
                     f"  - {c.get('topic', '?')}: {c.get('recommendation', 'Unklar')}"
@@ -420,7 +418,6 @@ def apply_to_docx(template_path: str | Path, filled_fields: list[dict], output_p
                             filled_count += 1
 
     if filled_count < len(field_map):
-        missing = set(field_map.keys())
         warnings.append(
             f"Nur {filled_count}/{len(field_map)} Felder konnten im Dokument gefunden werden. "
             f"Möglicherweise sind die Feldbezeichnungen anders als erwartet."

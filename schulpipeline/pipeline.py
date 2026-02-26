@@ -11,8 +11,8 @@ from typing import Any
 from .backends.router import BackendRouter
 from .config import PipelineConfig
 from .logging_config import set_stage
+from .stages import ArtifactStage, IntakeStage, PlanStage, ResearchStage, SynthesizeStage
 from .stages.base import StageResult, validate_against_spec
-from .stages import IntakeStage, PlanStage, ResearchStage, SynthesizeStage, ArtifactStage
 
 logger = logging.getLogger("schulpipeline.pipeline")
 
@@ -68,15 +68,15 @@ class Pipeline:
 
         # Audit-only mode: intake → classify_docs → audit (no filling)
         if preset and preset.output_constraints.get("audit_only"):
-            from .documents import ClassifyDocsStage
             from .audit import AuditStage
+            from .documents import ClassifyDocsStage
             return [IntakeStage(), ClassifyDocsStage(), AuditStage()]
 
         # Full requirements report: intake → classify → audit → classify_report → amendments
         if preset and preset.output_constraints.get("requirements_report"):
-            from .documents import ClassifyDocsStage
             from .audit import AuditStage
-            from .requirements import ClassifyReportStage, AmendmentsStage
+            from .documents import ClassifyDocsStage
+            from .requirements import AmendmentsStage, ClassifyReportStage
             return [
                 IntakeStage(),
                 ClassifyDocsStage(),
@@ -87,8 +87,8 @@ class Pipeline:
 
         # Template mode: intake → classify_docs → audit → fill_template
         if preset and preset.output_constraints.get("template_mode"):
-            from .documents import ClassifyDocsStage, FillTemplateStage
             from .audit import AuditStage
+            from .documents import ClassifyDocsStage, FillTemplateStage
             return [IntakeStage(), ClassifyDocsStage(), AuditStage(), FillTemplateStage()]
 
         return self._standard_stages
@@ -217,7 +217,7 @@ class Pipeline:
             output_dir = Path(self.config.output.dir)
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            from .worksheet import format_worksheet_as_md, format_worksheet_as_docx
+            from .worksheet import format_worksheet_as_docx, format_worksheet_as_md
             title = solve_data.get("title", "Arbeitsblatt")
             safe_title = "".join(c if c.isalnum() or c in "-_ " else "" for c in title).strip().replace(" ", "_")[:60]
 
@@ -265,7 +265,7 @@ class Pipeline:
             output_dir = Path(self.config.output.dir)
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            from .audit import format_audit_as_md, format_audit_as_docx
+            from .audit import format_audit_as_docx, format_audit_as_md
             safe_title = "Vorgaben-Audit"
 
             try:
@@ -295,7 +295,7 @@ class Pipeline:
             amendments = stage_data.get("amendments", {})
             audit_for_report = stage_data.get("audit", {})
 
-            from .requirements import build_full_report, format_report_as_md, format_report_as_docx
+            from .requirements import build_full_report, format_report_as_docx, format_report_as_md
             full_report = build_full_report(classify_report, audit_for_report, amendments)
 
             try:

@@ -29,7 +29,6 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
-import tempfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -129,7 +128,7 @@ class ProjectSpec:
         lines = [
             f"# Project: {self.title}",
             f"\n{self.description}",
-            f"\n## Technical Stack",
+            "\n## Technical Stack",
             f"- Language: {self.language}",
         ]
         if self.framework:
@@ -151,12 +150,12 @@ class ProjectSpec:
                                 lines.append(f"    - `{fn}`")
 
         if self.dependencies:
-            lines.append(f"\n## Dependencies")
+            lines.append("\n## Dependencies")
             for dep in self.dependencies:
                 lines.append(f"- {dep}")
 
         if self.requirements:
-            lines.append(f"\n## Requirements")
+            lines.append("\n## Requirements")
             for req in self.requirements:
                 lines.append(f"- {req}")
 
@@ -306,7 +305,7 @@ class LocalLLMAgent(BaseAgent):
         lines = [
             f"# {spec.title}",
             f"\n{spec.description}",
-            f"\n## Setup",
+            "\n## Setup",
         ]
         if spec.language == "python":
             lines.append("```bash\npip install -r requirements.txt\n```")

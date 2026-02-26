@@ -1,16 +1,16 @@
 """Tests for individual pipeline stages with mock backend."""
 
 import json
+
 import pytest
 
+from schulpipeline.stages.artifact import ArtifactStage, _safe_filename
 from schulpipeline.stages.base import BaseStage, MissingContextError, StageResult, validate_against_spec
-from schulpipeline.stages.intake import IntakeStage, _parse_json_response, _infer_format
+from schulpipeline.stages.intake import IntakeStage, _infer_format, _parse_json_response
 from schulpipeline.stages.plan import PlanStage
 from schulpipeline.stages.research import ResearchStage
 from schulpipeline.stages.synthesize import SynthesizeStage
-from schulpipeline.stages.artifact import ArtifactStage, _safe_filename
 from tests.conftest import DEFAULT_STAGE_RESPONSES
-
 
 # ============================================================
 # stages/base.py
@@ -218,8 +218,8 @@ async def test_research_stage(mock_router, mock_config):
 @pytest.mark.asyncio
 async def test_research_sanitizes_urls_when_web_disabled(mock_config):
     """When use_web=False, any fabricated URLs in findings are replaced with llm_knowledge."""
-    from tests.conftest import MockBackend
     from schulpipeline.backends.router import BackendRouter
+    from tests.conftest import MockBackend
 
     # Mock that returns findings with a fabricated URL
     research_with_urls = json.dumps({
@@ -370,7 +370,7 @@ async def test_synthesize_tone_from_style(mock_router, mock_config):
     }
 
     stage = SynthesizeStage()
-    result = await stage.run(context, mock_router, mock_config)
+    await stage.run(context, mock_router, mock_config)
 
     # The mock backend records calls — check system prompt contains tone info
     mock_backend = mock_router._backends["mock"]
@@ -395,7 +395,7 @@ async def test_synthesize_fallback_tone(mock_router, mock_config):
     }
 
     stage = SynthesizeStage()
-    result = await stage.run(context, mock_router, mock_config)
+    await stage.run(context, mock_router, mock_config)
 
     mock_backend = mock_router._backends["mock"]
     last_call = mock_backend.calls[-1]
@@ -421,7 +421,7 @@ async def test_synthesize_visual_instruction(mock_router, mock_config):
     }
 
     stage = SynthesizeStage()
-    result = await stage.run(context, mock_router, mock_config)
+    await stage.run(context, mock_router, mock_config)
 
     mock_backend = mock_router._backends["mock"]
     last_call = mock_backend.calls[-1]
@@ -448,7 +448,7 @@ async def test_synthesize_no_visual_instruction(mock_router, mock_config):
     }
 
     stage = SynthesizeStage()
-    result = await stage.run(context, mock_router, mock_config)
+    await stage.run(context, mock_router, mock_config)
 
     mock_backend = mock_router._backends["mock"]
     last_call = mock_backend.calls[-1]

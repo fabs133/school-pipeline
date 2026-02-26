@@ -1,15 +1,13 @@
 """Live stage tests — each stage runs against a real LLM and validates against spec."""
 
-import json
 import pytest
 
+from schulpipeline.stages.artifact import ArtifactStage
+from schulpipeline.stages.base import validate_against_spec
 from schulpipeline.stages.intake import IntakeStage
 from schulpipeline.stages.plan import PlanStage
 from schulpipeline.stages.research import ResearchStage
 from schulpipeline.stages.synthesize import SynthesizeStage
-from schulpipeline.stages.artifact import ArtifactStage
-from schulpipeline.stages.base import validate_against_spec
-
 
 TASK_TEXT = "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit 6 Folien."
 

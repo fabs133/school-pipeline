@@ -1,12 +1,8 @@
 """Tests for session persistence — serialization, store, and resume."""
 
 import json
-from pathlib import Path
 
-import pytest
-
-from schulpipeline.session import Session, StageSnapshot, SessionStore
-
+from schulpipeline.session import Session, SessionStore, StageSnapshot
 
 # ============================================================
 # Session model
@@ -176,7 +172,7 @@ def test_store_list_sessions(tmp_path):
 def test_store_list_with_status_filter(tmp_path):
     store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
     s1 = store.create(task_input="Task 1")
-    s2 = store.create(task_input="Task 2")
+    store.create(task_input="Task 2")
 
     s1.status = "completed"
     store.save(s1)
@@ -232,9 +228,8 @@ def test_session_purge_keeps_running(tmp_path):
         s.status = "running" if i == 0 else "completed"
         store.save(s)
 
-    removed = store.purge(max_age_days=9999, max_count=2)
+    store.purge(max_age_days=9999, max_count=2)
     # The running session is protected; only completed sessions beyond count are removed
     remaining = store.list_sessions()
-    remaining_ids = {e["id"] for e in remaining}
     running = [e for e in remaining if e.get("status") == "running"]
     assert len(running) == 1  # running session preserved

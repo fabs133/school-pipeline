@@ -27,14 +27,12 @@ Only semantic ambiguity detection requires LLM assistance.
 
 from __future__ import annotations
 
-import json
 import math
 from dataclasses import dataclass, field
 from typing import Any
 
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
-
 
 # ============================================================
 # Audit Model
@@ -132,7 +130,7 @@ def check_template_field_feasibility(
         findings.append({
             "category": "impossibility",
             "severity": "blocker",
-            "title": f"Template hat nicht genug Platz für alle Anforderungen",
+            "title": "Template hat nicht genug Platz für alle Anforderungen",
             "detail": f"{req_count} Anforderungen müssen in {field_count} Felder "
                       f"mit insgesamt ~{total_chars} Zeichen passen. "
                       f"Das ergibt durchschnittlich {avg_chars_per_req:.0f} Zeichen pro Anforderung.",
@@ -225,7 +223,7 @@ def check_contradictions_deterministic(documents: list[dict]) -> list[dict]:
                 "category": "contradiction",
                 "severity": "warning",
                 "title": f"Widersprüchliche Angaben zu '{topic}'",
-                "detail": f"Verschiedene Dokumente machen unterschiedliche Angaben:\n"
+                "detail": "Verschiedene Dokumente machen unterschiedliche Angaben:\n"
                           + "\n".join(f"  - {s}" for s in source_details),
                 "sources": list(set(fn for fn, _ in sources)),
                 "quotes": [v for _, v in sources],
@@ -511,8 +509,8 @@ def format_audit_as_md(audit: dict[str, Any]) -> str:
     lines.append("")
     lines.append(f"**Ergebnis: {summary.get('verdict', '?')}**")
     lines.append("")
-    lines.append(f"| Metrik | Wert |")
-    lines.append(f"|---|---|")
+    lines.append("| Metrik | Wert |")
+    lines.append("|---|---|")
     lines.append(f"| Analysierte Dokumente | {len(audit.get('documents_analyzed', []))} |")
     lines.append(f"| Feststellungen gesamt | {summary.get('total_findings', 0)} |")
     lines.append(f"| Blocker | {summary.get('blockers', 0)} |")
@@ -577,7 +575,6 @@ def format_audit_as_docx(audit: dict[str, Any], output_path) -> None:
     """Format audit report as DOCX — for formal submission."""
     from docx import Document
     from docx.shared import Pt, RGBColor
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
 
     doc = Document()
 
@@ -629,13 +626,13 @@ def format_audit_as_docx(audit: dict[str, Any], output_path) -> None:
             severity = f.get("severity", "info")
             marker = {"blocker": "🔴", "warning": "🟡", "info": "🔵"}.get(severity, "")
 
-            heading = doc.add_heading(f"{marker} {f.get('id', '?')}: {f.get('title', '?')}", level=2)
+            doc.add_heading(f"{marker} {f.get('id', '?')}: {f.get('title', '?')}", level=2)
 
             # Severity and category
             meta = doc.add_paragraph()
-            meta.add_run(f"Kategorie: ").bold = True
+            meta.add_run("Kategorie: ").bold = True
             meta.add_run(f.get("category", "?"))
-            meta.add_run(f"  |  Schwere: ").bold = True
+            meta.add_run("  |  Schwere: ").bold = True
             meta.add_run(severity)
 
             # Detail

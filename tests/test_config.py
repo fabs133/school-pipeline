@@ -1,9 +1,7 @@
 """Tests for config loading and backend discovery."""
 
-import os
-from pathlib import Path
 
-from schulpipeline.config import load_config, BackendConfig, PipelineConfig, validate_config
+from schulpipeline.config import BackendConfig, PipelineConfig, load_config, validate_config
 
 
 def test_load_empty_config():

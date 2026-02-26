@@ -1,9 +1,10 @@
 """Tests for backend router — cascade logic and error handling."""
 
-import pytest
 import time
 
-from schulpipeline.backends.base import BackendError, RateLimitError, LLMResponse
+import pytest
+
+from schulpipeline.backends.base import BackendError, LLMResponse
 from schulpipeline.backends.router import BackendRouter
 
 

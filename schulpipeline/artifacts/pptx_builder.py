@@ -6,17 +6,19 @@ from pathlib import Path
 from typing import Any
 
 from pptx import Presentation
-from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.dml import MSO_LINE_DASH_STYLE
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-from pptx.util import Inches, Pt, Emu
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import PP_ALIGN
+from pptx.util import Emu, Inches, Pt
 
 from ..styles import (
-    VisualStyle, VisualSlotConfig,
-    DEFAULT_STYLE, DISABLED_VISUAL_SLOTS,
-    _to_rgb, _lighten,
+    DEFAULT_STYLE,
+    DISABLED_VISUAL_SLOTS,
+    VisualSlotConfig,
+    VisualStyle,
+    _lighten,
+    _to_rgb,
 )
-
 
 # Visual type labels for placeholders (text-based for reliable rendering)
 _TYPE_ICONS = {

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -79,7 +78,7 @@ class ArtifactStage(BaseStage):
         backend: Any, config: Any, preset: Any
     ) -> dict[str, Any]:
         """Build a coding project using an agent."""
-        from ..agents import build_project_spec, LocalLLMAgent
+        from ..agents import LocalLLMAgent, build_project_spec
 
         # Build the project spec from synthesis
         spec = build_project_spec(synthesis, intake)

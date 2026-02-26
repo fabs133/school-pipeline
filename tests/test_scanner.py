@@ -13,13 +13,12 @@ import pytest
 from schulpipeline.scanner import (
     READERS,
     ContentResult,
-    ScanResult,
     ScannedFile,
+    ScanResult,
     TaskBundle,
     build_bundles,
     classify_file,
     detect_project_bundles,
-    read_docx,
     read_drawio,
     read_java,
     read_pdf,
@@ -30,7 +29,6 @@ from schulpipeline.scanner import (
     to_manifest,
     to_summary,
 )
-
 
 # ============================================================
 # Helpers

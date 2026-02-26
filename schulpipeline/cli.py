@@ -5,23 +5,21 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import logging
 import sys
 from pathlib import Path
 
-from .config import load_config
 from .backends.router import BackendRouter
-from .logging_config import setup_logging, set_run_id
+from .config import load_config
+from .logging_config import set_run_id, setup_logging
 from .pipeline import Pipeline
 from .presets import (
     OUTPUT_PRESETS,
-    SUBJECT_PRESETS,
     QUICK_PRESETS,
+    SUBJECT_PRESETS,
+    list_presets,
     resolve_preset,
     resolve_quick,
-    list_presets,
 )
-
 
 # --- Encoding-safe output helpers ---
 
@@ -162,6 +160,13 @@ def build_parser() -> argparse.ArgumentParser:
     # --- backends ---
     subparsers.add_parser("backends", help="Verfügbare Backends anzeigen")
 
+    # --- scan ---
+    scan_p = subparsers.add_parser("scan", help="Verzeichnis scannen und Dokumente klassifizieren")
+    scan_p.add_argument("path", help="Verzeichnis zum Scannen")
+    scan_p.add_argument("--json", dest="json_out", action="store_true", help="JSON-Manifest ausgeben")
+    scan_p.add_argument("-o", "--output", dest="output_file", help="Manifest in Datei schreiben (YAML/JSON)")
+    scan_p.add_argument("--verbose", "-v", action="store_true", help="Details pro Datei anzeigen")
+
     # --- doctor ---
     subparsers.add_parser("doctor", help="System-Diagnose: Umgebung, Keys, Backends prüfen")
 
@@ -269,7 +274,7 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
                 return 0
 
     # Create session
-    from .session import SessionStore, SessionRunner
+    from .session import SessionRunner, SessionStore
 
     store = SessionStore()
     input_str = str(raw_input)
@@ -309,7 +314,7 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
 
 
 async def cmd_resume(args: argparse.Namespace, config) -> int:
-    from .session import SessionStore, SessionRunner
+    from .session import SessionRunner, SessionStore
 
     store = SessionStore()
 
@@ -438,7 +443,7 @@ def cmd_show(args, config) -> int:
     if session.tags:
         print(f"Tags:      {', '.join(session.tags)}")
 
-    print(f"\nStages:")
+    print("\nStages:")
     for snap in session.completed_stages:
         sym = SYM_OK if snap.success else SYM_FAIL
         print(f"  {sym} {snap.name:12s} {snap.elapsed_ms:6d}ms  {snap.completed_at[:19]}")
@@ -519,6 +524,50 @@ def cmd_presets(args) -> int:
     return 0
 
 
+def cmd_scan(args) -> int:
+    """Scan a directory and classify documents."""
+    from .scanner import scan_directory, to_manifest, to_summary
+
+    path = Path(args.path)
+    if not path.is_dir():
+        print(f"Fehler: '{args.path}' ist kein Verzeichnis", file=sys.stderr)
+        return 1
+
+    result = scan_directory(path)
+
+    if args.json_out:
+        manifest = to_manifest(result)
+        print(_json_dumps(manifest, indent=2))
+    else:
+        print(to_summary(result))
+
+    if getattr(args, "verbose", False) and not args.json_out:
+        for f in result.files:
+            signals = []
+            if f.task_signals:
+                signals.append(f"task_signals={len(f.task_signals)}")
+            if f.info_signals:
+                signals.append(f"info_signals={len(f.info_signals)}")
+            extra = f" ({', '.join(signals)})" if signals else ""
+            print(f"  {f.role:.<16} {f.path}{extra}")
+
+    if getattr(args, "output_file", None):
+        manifest = to_manifest(result)
+        out_path = Path(args.output_file)
+        if out_path.suffix in (".yaml", ".yml"):
+            try:
+                import yaml
+                out_path.write_text(yaml.dump(manifest, allow_unicode=True, default_flow_style=False), encoding="utf-8")
+            except ImportError:
+                print("Fehler: pyyaml benötigt für YAML-Ausgabe", file=sys.stderr)
+                return 1
+        else:
+            out_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"\nManifest geschrieben: {out_path}")
+
+    return 0
+
+
 def cmd_backends(config) -> int:
     print("Konfigurierte Backends:\n")
     for name, cfg in config.backends.items():
@@ -530,7 +579,7 @@ def cmd_backends(config) -> int:
             reason = f" (kein API Key — setze {name.upper()}_API_KEY)"
         print(f"  {status} {name:10s} model={cfg.model}{reason}")
 
-    print(f"\nCascade:")
+    print("\nCascade:")
     for stage in ["intake", "plan", "research", "synthesize", "artifact"]:
         cascade = config.cascade_for(stage)
         print(f"  {stage:12s} → {' → '.join(cascade) if cascade else '(keines verfügbar)'}")
@@ -571,8 +620,9 @@ async def cmd_doctor(config) -> int:
 
     # 3. API keys
     print("API Keys:")
-    from .config import ENV_KEY_MAP
     import os
+
+    from .config import ENV_KEY_MAP
     keys_found = 0
     for backend_name, env_var in ENV_KEY_MAP.items():
         val = os.environ.get(env_var, "")
@@ -622,12 +672,12 @@ async def cmd_doctor(config) -> int:
         all_ok = False
 
     # 6. Config file
-    print(f"\nKonfiguration:")
+    print("\nKonfiguration:")
     config_path = Path("config.yaml")
     if config_path.exists():
-        print(f"  OK  config.yaml gefunden")
+        print("  OK  config.yaml gefunden")
     else:
-        print(f"  --  config.yaml nicht gefunden (Defaults werden verwendet)")
+        print("  --  config.yaml nicht gefunden (Defaults werden verwendet)")
 
     print(f"\n{'OK — Alles bereit.' if all_ok and keys_found > 0 else 'Einige Probleme gefunden — siehe oben.'}")
     return 0
@@ -689,7 +739,9 @@ def main() -> None:
     )
     set_run_id()
 
-    if args.command == "presets":
+    if args.command == "scan":
+        sys.exit(cmd_scan(args))
+    elif args.command == "presets":
         sys.exit(cmd_presets(args))
     elif args.command == "backends":
         sys.exit(cmd_backends(config))

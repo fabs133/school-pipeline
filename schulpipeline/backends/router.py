@@ -9,20 +9,19 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-MAX_RETRIES_PER_BACKEND = 2
-BACKOFF_BASE = 1.0  # seconds
-BACKOFF_MAX = 10.0  # seconds
-
-from ..config import BackendConfig, PipelineConfig
+from ..config import PipelineConfig
 from .base import Backend, BackendError, LLMResponse, RateLimitError
-from .gemini import GeminiBackend, create_gemini
+from .gemini import create_gemini
 from .openai_compat import (
-    OpenAICompatibleBackend,
     create_groq,
     create_mistral,
     create_ollama,
     create_openai,
 )
+
+MAX_RETRIES_PER_BACKEND = 2
+BACKOFF_BASE = 1.0  # seconds
+BACKOFF_MAX = 10.0  # seconds
 
 logger = logging.getLogger("schulpipeline.router")
 

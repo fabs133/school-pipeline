@@ -22,13 +22,11 @@ If the teacher asked a question, the answer is under the question.
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from typing import Any
 
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
-
 
 # ============================================================
 # Task Model
@@ -241,7 +239,7 @@ class SolveStage(BaseStage):
 
         if task.get("table_structure"):
             table = task["table_structure"]
-            task_context += f"\nTabelle zum Ausfüllen:\n"
+            task_context += "\nTabelle zum Ausfüllen:\n"
             task_context += f"Spalten: {', '.join(table.get('headers', []))}\n"
             for row in table.get("rows", []):
                 task_context += f"  {row.get('label', '')}: {row.get('values', [])}\n"
@@ -341,9 +339,8 @@ def format_worksheet_as_md(result: dict[str, Any]) -> str:
 def format_worksheet_as_docx(result: dict[str, Any], output_path) -> None:
     """Format solved worksheet as DOCX with proper tables."""
     from docx import Document
-    from docx.shared import Pt, Inches, RGBColor, Cm
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.enum.table import WD_TABLE_ALIGNMENT
+    from docx.shared import Pt, RGBColor
 
     doc = Document()
 

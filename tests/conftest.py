@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from typing import Any
 
 import pytest
 
-from schulpipeline.backends.base import LLMResponse, BackendError
-from schulpipeline.backends.router import BackendRouter, BACKEND_FACTORIES
-from schulpipeline.config import BackendConfig, PipelineConfig, OutputConfig, ResearchConfig
-
+from schulpipeline.backends.base import BackendError, LLMResponse
+from schulpipeline.backends.router import BackendRouter
+from schulpipeline.config import BackendConfig, OutputConfig, PipelineConfig, ResearchConfig
 
 # --- Mock Backend ---
 

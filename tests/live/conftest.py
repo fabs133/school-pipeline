@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from schulpipeline.config import load_config, PipelineConfig
 from schulpipeline.backends.router import BackendRouter
+from schulpipeline.config import PipelineConfig, load_config
 
 
 def _load_env():

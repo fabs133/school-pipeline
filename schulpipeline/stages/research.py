@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from .base import BaseStage
@@ -131,7 +130,8 @@ class ResearchStage(BaseStage):
         Uses DuckDuckGo search + page scraping with disk caching.
         """
         import asyncio
-        from schulpipeline.research.web import search_and_extract, DiskCache
+
+        from schulpipeline.research.web import DiskCache, search_and_extract
 
         cache = DiskCache(config.research.cache_dir)
         results: dict[str, list[dict]] = {}

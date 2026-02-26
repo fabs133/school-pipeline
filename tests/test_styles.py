@@ -4,23 +4,19 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
+from schulpipeline.config import BackendConfig, OutputConfig, PipelineConfig, ResearchConfig
 from schulpipeline.styles import (
-    STYLE_PRESETS,
     DEFAULT_STYLE,
     DEFAULT_VISUAL_SLOTS,
-    DISABLED_VISUAL_SLOTS,
-    StylePreset,
-    VisualSlotConfig,
+    STYLE_PRESETS,
+    _bullet_instruction,
+    _lighten,
+    _sentence_instruction,
+    _to_docx_rgb,
+    _to_rgb,
     resolve_style,
     resolve_visual_config,
-    _to_rgb,
-    _to_docx_rgb,
-    _lighten,
-    _bullet_instruction,
-    _sentence_instruction,
 )
-from schulpipeline.config import PipelineConfig, BackendConfig, OutputConfig, ResearchConfig
-
 
 # --- Helpers to build minimal PipelineConfig ---
 
