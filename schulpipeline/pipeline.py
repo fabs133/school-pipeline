@@ -42,6 +42,21 @@ class Pipeline:
             ArtifactStage(),
         ]
 
+    def estimate_cost(self, stages: list[str] | None = None) -> tuple[float, dict]:
+        """Estimate the cost of running the pipeline.
+
+        Args:
+            stages: List of stage names. If None, uses the standard 5 stages.
+
+        Returns:
+            (total_cost_usd, per_stage_breakdown)
+        """
+        from .backends.pricing import estimate_pipeline_cost
+
+        stage_names = stages or [s.name for s in self._standard_stages]
+        effective_cascade = {name: self.config.cascade_for(name) for name in stage_names}
+        return estimate_pipeline_cost(stage_names, effective_cascade)
+
     def _select_stages(self, context: dict[str, Any]) -> list:
         """Select stage sequence based on preset/mode."""
         preset = context.get("preset")
@@ -78,17 +93,33 @@ class Pipeline:
 
         return self._standard_stages
 
-    async def run(self, raw_input: str | Path, preset: Any = None) -> PipelineResult:
+    async def run(
+        self,
+        raw_input: str | Path,
+        preset: Any = None,
+        overrides: dict | None = None,
+        on_progress: Any = None,
+    ) -> PipelineResult:
         """Execute the full pipeline.
 
         Args:
             raw_input: Task text or path to image/file.
             preset: Optional ResolvedPreset from the preset system.
+            overrides: Optional CLI overrides for style/visuals.
+            on_progress: Optional callback(event, stage_name, stage_index, total_stages, **kw).
         """
         t0 = time.monotonic()
         context: dict[str, Any] = {"raw_input": raw_input}
         if preset:
             context["preset"] = preset
+        if overrides and overrides.get("subject"):
+            context["subject_hint"] = overrides["subject"]
+
+        # Resolve style and visual configuration
+        from .styles import resolve_style, resolve_visual_config
+        context["style"] = resolve_style(self.config, overrides)
+        context["visual_slots"] = resolve_visual_config(self.config, overrides)
+
         results: list[StageResult] = []
 
         available = self.router.available_backends
@@ -108,10 +139,14 @@ class Pipeline:
         is_audit = preset and hasattr(preset, 'output_constraints') and preset.output_constraints.get("audit_only")
         is_req_report = preset and hasattr(preset, 'output_constraints') and preset.output_constraints.get("requirements_report")
 
-        for stage in stages:
+        total_stages = len(stages)
+        for i, stage in enumerate(stages):
             stage_name = stage.name
             set_stage(stage_name)
             logger.info(f"=== Stage: {stage_name} ===")
+
+            if on_progress:
+                on_progress("stage_start", stage_name, i, total_stages)
 
             # Run the stage
             result = await stage.run(context, self.router, self.config)
@@ -120,6 +155,9 @@ class Pipeline:
             if not result.success:
                 elapsed = int((time.monotonic() - t0) * 1000)
                 logger.error(f"Stage '{stage_name}' failed: {result.errors}")
+                if on_progress:
+                    on_progress("stage_error", stage_name, i, total_stages,
+                                elapsed_ms=result.metadata.get("elapsed_ms", 0), errors=result.errors)
                 return PipelineResult(
                     success=False,
                     results=results,
@@ -144,10 +182,27 @@ class Pipeline:
                         elapsed_ms=elapsed,
                     )
             else:
-                logger.warning(f"No spec found at {spec_path}, skipping validation")
+                _CORE_STAGES = {"intake", "plan", "research", "synthesize"}
+                if stage_name in _CORE_STAGES:
+                    elapsed = int((time.monotonic() - t0) * 1000)
+                    logger.error(f"Missing spec for core stage '{stage_name}': {spec_path}")
+                    return PipelineResult(
+                        success=False,
+                        results=results,
+                        failed_stage=stage_name,
+                        validation_errors=[f"Missing spec: {spec_path}"],
+                        total_cost_usd=self.router.total_cost,
+                        elapsed_ms=elapsed,
+                    )
+                else:
+                    logger.warning(f"No spec found at {spec_path}, skipping validation")
 
             # Store result in context for next stage
             context[stage_name] = result.data
+
+            if on_progress:
+                on_progress("stage_done", stage_name, i, total_stages,
+                            elapsed_ms=result.metadata.get("elapsed_ms", 0))
 
             logger.info(
                 f"Stage '{stage_name}' completed in {result.metadata.get('elapsed_ms', '?')}ms"
@@ -265,11 +320,15 @@ class Pipeline:
             elapsed_ms=elapsed,
         )
 
-    async def plan_only(self, raw_input: str | Path, preset: Any = None) -> PipelineResult:
+    async def plan_only(self, raw_input: str | Path, preset: Any = None, overrides: dict | None = None) -> PipelineResult:
         """Run only intake + plan stages (dry run)."""
         context: dict[str, Any] = {"raw_input": raw_input}
         if preset:
             context["preset"] = preset
+
+        from .styles import resolve_style, resolve_visual_config
+        context["style"] = resolve_style(self.config, overrides)
+        context["visual_slots"] = resolve_visual_config(self.config, overrides)
         results: list[StageResult] = []
 
         for stage in self._standard_stages[:2]:  # intake + plan only

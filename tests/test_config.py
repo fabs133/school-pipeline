@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from schulpipeline.config import load_config, BackendConfig, PipelineConfig
+from schulpipeline.config import load_config, BackendConfig, PipelineConfig, validate_config
 
 
 def test_load_empty_config():
@@ -51,3 +51,43 @@ def test_config_overrides():
     config = load_config(path=None, overrides={"log_level": "DEBUG", "format": "docx"})
     assert config.log_level == "DEBUG"
     assert config.output.default_format == "docx"
+
+
+# ============================================================
+# validate_config()
+# ============================================================
+
+def test_validate_config_valid(mock_config):
+    """Valid config returns no errors."""
+    errors = validate_config(mock_config)
+    assert errors == []
+
+
+def test_validate_config_no_backends():
+    """Config with no available backends produces an error."""
+    config = PipelineConfig(
+        backends={"groq": BackendConfig(name="groq", api_key="", enabled=True)},
+    )
+    errors = validate_config(config)
+    assert len(errors) == 1
+    assert "Kein Backend" in errors[0]
+
+
+def test_validate_config_bad_cascade_ref():
+    """Cascade referencing unknown backend produces an error."""
+    config = PipelineConfig(
+        backends={"mock": BackendConfig(name="mock", api_key="test", enabled=True)},
+        cascade={"intake": ["mock", "nonexistent_backend"]},
+    )
+    errors = validate_config(config)
+    assert any("nonexistent_backend" in e for e in errors)
+
+
+def test_validate_config_multiple_errors():
+    """Multiple issues produce multiple errors."""
+    config = PipelineConfig(
+        backends={"groq": BackendConfig(name="groq", api_key="", enabled=False)},
+        cascade={"plan": ["fake_backend"]},
+    )
+    errors = validate_config(config)
+    assert len(errors) >= 2

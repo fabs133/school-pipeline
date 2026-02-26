@@ -52,6 +52,8 @@ class PipelineConfig:
     output: OutputConfig = field(default_factory=OutputConfig)
     log_level: str = "INFO"
     log_file: str = ".schulpipeline/pipeline.log"
+    style: str | dict = "clean"
+    visuals: bool | dict = True
 
     # --- Defaults applied when config is sparse ---
 
@@ -81,6 +83,42 @@ class PipelineConfig:
 
     def available_backends(self) -> list[str]:
         return [name for name, cfg in self.backends.items() if cfg.is_available]
+
+
+class ConfigValidationError(Exception):
+    """Raised when config.yaml is invalid or unusable."""
+
+    def __init__(self, errors: list[str]):
+        self.errors = errors
+        super().__init__(f"Config validation failed: {'; '.join(errors)}")
+
+
+def validate_config(config: PipelineConfig) -> list[str]:
+    """Validate that config is usable. Returns list of error messages (empty = valid)."""
+    errors: list[str] = []
+
+    # At least one backend must be available
+    if not config.available_backends():
+        errors.append(
+            "Kein Backend verfuegbar. Mindestens GROQ_API_KEY oder "
+            "GEMINI_API_KEY in .env setzen (beide kostenlos). Siehe .env.example"
+        )
+
+    # Cascade references must point to known backends
+    for stage, backend_names in config.cascade.items():
+        for name in backend_names:
+            if name not in config.backends:
+                errors.append(
+                    f"cascade.{stage} referenziert unbekanntes Backend '{name}'. "
+                    f"Bekannt: {', '.join(sorted(config.backends))}"
+                )
+
+    # Output dir must be writable (if it already exists)
+    output_dir = Path(config.output.dir)
+    if output_dir.exists() and not os.access(str(output_dir), os.W_OK):
+        errors.append(f"Ausgabeverzeichnis nicht beschreibbar: {output_dir}")
+
+    return errors
 
 
 # --- Default backend presets ---
@@ -183,6 +221,8 @@ def load_config(path: str | Path | None = None, overrides: dict[str, Any] | None
         output=output,
         log_level=raw_logging.get("level", "INFO"),
         log_file=raw_logging.get("file", ".schulpipeline/pipeline.log"),
+        style=raw.get("style", "clean"),
+        visuals=raw.get("visuals", True),
     )
 
     # Apply CLI overrides
@@ -191,5 +231,9 @@ def load_config(path: str | Path | None = None, overrides: dict[str, Any] | None
             config.log_level = overrides["log_level"]
         if "format" in overrides:
             config.output.default_format = overrides["format"]
+        if "style" in overrides:
+            config.style = overrides["style"]
+        if overrides.get("no_visuals"):
+            config.visuals = False
 
     return config

@@ -55,6 +55,7 @@ def _build_intake_prompt(preset=None) -> str:
 class IntakeStage(BaseStage):
     name = "intake"
     spec_path = "specs/intake.json"
+    required_context = frozenset({"raw_input"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         raw_input = context["raw_input"]
@@ -75,6 +76,11 @@ class IntakeStage(BaseStage):
             data["constraints"]["language"] = preset.language
             if preset.section_count and not data["constraints"].get("slide_count"):
                 data["constraints"]["slide_count"] = preset.section_count
+
+        # Override subject if CLI/scanner provided a hint
+        subject_hint = context.get("subject_hint")
+        if subject_hint:
+            data["subject"] = subject_hint
 
         return data
 
@@ -141,20 +147,37 @@ class IntakeStage(BaseStage):
 
 
 def _parse_json_response(content: str) -> dict[str, Any]:
-    """Extract JSON from LLM response, handling markdown fences."""
-    content = content.strip()
-    if content.startswith("```"):
-        lines = content.split("\n")
-        # Remove first and last line (fences)
-        lines = lines[1:]
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        content = "\n".join(lines)
+    """Extract JSON from LLM response, handling markdown fences and surrounding text."""
+    import re
 
+    content = content.strip()
+
+    # Try to extract from markdown code fences (```json ... ``` or ``` ... ```)
+    fence_match = re.search(r"```\w*\s*\n?(.*?)```", content, re.DOTALL)
+    if fence_match:
+        content = fence_match.group(1).strip()
+
+    # If content doesn't start with JSON, try to find the first { or [
+    if not content.startswith(("{", "[")):
+        for i, ch in enumerate(content):
+            if ch in ("{", "["):
+                content = content[i:]
+                break
+
+    # Try strict parse first, then raw_decode to handle trailing text
     try:
         return json.loads(content)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"LLM returned invalid JSON: {e}\nContent: {content[:500]}")
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(content)
+        if isinstance(obj, dict):
+            return obj
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    raise ValueError(f"LLM returned invalid JSON\nContent: {content[:500]}")
 
 
 def _infer_format(task_type: str) -> str:

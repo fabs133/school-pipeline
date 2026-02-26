@@ -23,6 +23,72 @@ from .presets import (
 )
 
 
+# --- Encoding-safe output helpers ---
+
+def _supports_unicode() -> bool:
+    """Check if stdout can handle Unicode output."""
+    try:
+        enc = getattr(sys.stdout, "encoding", "") or ""
+        return enc.lower().replace("-", "") in ("utf8", "utf16", "utf32", "utf8sig")
+    except Exception:
+        return False
+
+
+if _supports_unicode():
+    SYM_OK, SYM_FAIL, SYM_RUN, SYM_PAUSE, SYM_PENDING = "\u2713", "\u2717", "\u25b6", "\u23f8", "\u25cb"
+    SYM_HLINE, SYM_DLINE = "\u2500", "\u2550"
+else:
+    SYM_OK, SYM_FAIL, SYM_RUN, SYM_PAUSE, SYM_PENDING = "+", "X", ">", "||", "o"
+    SYM_HLINE, SYM_DLINE = "-", "="
+
+
+# Stage name translations for progress display
+_STAGE_LABELS: dict[str, str] = {
+    "intake": "Aufgabe analysieren",
+    "plan": "Plan erstellen",
+    "research": "Recherchieren",
+    "synthesize": "Inhalt erstellen",
+    "artifact": "Datei generieren",
+}
+
+
+def _progress_printer(event: str, stage_name: str, stage_index: int, total_stages: int, **kwargs) -> None:
+    """Print real-time progress to stdout."""
+    label = _STAGE_LABELS.get(stage_name, stage_name)
+    step = f"[{stage_index + 1}/{total_stages}]"
+
+    if event == "stage_start":
+        print(f"  {step} {SYM_RUN} {label}...", end="", flush=True)
+    elif event == "stage_done":
+        elapsed_s = kwargs.get("elapsed_ms", 0) / 1000
+        print(f"\r  {step} {SYM_OK} {label} ({elapsed_s:.1f}s)")
+    elif event == "stage_error":
+        elapsed_s = kwargs.get("elapsed_ms", 0) / 1000
+        errors = kwargs.get("errors", [])
+        print(f"\r  {step} {SYM_FAIL} {label} ({elapsed_s:.1f}s)")
+        for err in errors[:3]:
+            print(f"       {err}")
+
+
+def _json_dumps(obj, **kwargs) -> str:
+    """JSON serialization safe for piped output."""
+    if not sys.stdout.isatty():
+        kwargs.setdefault("ensure_ascii", True)
+    else:
+        kwargs.setdefault("ensure_ascii", False)
+    return json.dumps(obj, **kwargs)
+
+
+def _read_text_with_fallback(path: Path) -> str:
+    """Read a text file, trying UTF-8 first then cp1252 and latin-1."""
+    for enc in ("utf-8", "cp1252", "latin-1"):
+        try:
+            return path.read_text(encoding=enc)
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="schulpipeline",
@@ -46,6 +112,10 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--slides", type=int, help="Folienanzahl")
     run_p.add_argument("--tag", action="append", default=[], help="Tags für die Session")
     run_p.add_argument("--dry-run", action="store_true", help="Nur Plan anzeigen, nicht ausführen")
+    run_p.add_argument("--style", help="Style-Preset (clean, modern, minimal, school, corporate, dark)")
+    run_p.add_argument("--no-visuals", action="store_true", help="Keine visuellen Platzhalter")
+    run_p.add_argument("--visual-placement", choices=["right", "center"], help="Platzierung der Visuals")
+    run_p.add_argument("--yes", "-y", action="store_true", help="Kosten-Warnung überspringen")
 
     # --- resume ---
     resume_p = subparsers.add_parser("resume", help="Letzte/bestimmte Session fortsetzen")
@@ -75,6 +145,15 @@ def build_parser() -> argparse.ArgumentParser:
     plan_p.add_argument("--preset", "-p", help="Quick-Preset")
     plan_p.add_argument("--output-type", help="Ausgabetyp")
     plan_p.add_argument("--subject", "-s", help="Fach")
+    plan_p.add_argument("--style", help="Style-Preset")
+
+    # --- cost-estimate ---
+    cost_p = subparsers.add_parser("cost-estimate", help="Kosten-Schätzung für eine Pipeline-Ausführung")
+    cost_p.add_argument("task", nargs="?", help="Aufgabentext")
+    cost_p.add_argument("--input", "-i", help="Eingabedatei")
+    cost_p.add_argument("--preset", "-p", help="Quick-Preset")
+    cost_p.add_argument("--output-type", help="Ausgabetyp")
+    cost_p.add_argument("--subject", "-s", help="Fach")
 
     # --- presets ---
     presets_p = subparsers.add_parser("presets", help="Verfügbare Presets anzeigen")
@@ -111,6 +190,36 @@ def _resolve_preset_from_args(args: argparse.Namespace):
     return None
 
 
+async def cmd_cost_estimate(args: argparse.Namespace, config) -> int:
+    """Show estimated cost for a pipeline run."""
+    router = BackendRouter(config)
+    pipeline = Pipeline(config, router)
+
+    total, breakdown = pipeline.estimate_cost()
+    await router.close()
+
+    print("Kosten-Schaetzung (tatsaechliche Kosten koennen abweichen):\n")
+    print(f"  {'Stage':15s} {'Backend':10s} {'Tokens':>12s} {'Kosten':>10s}")
+    print(f"  {SYM_HLINE * 50}")
+
+    for stage_name, info in breakdown.items():
+        tokens = f"{info['tokens_in']}+{info['tokens_out']}"
+        cost = f"${info['cost_usd']:.4f}"
+        backend = info["backend"]
+        free_marker = " (frei)" if info["cost_usd"] == 0.0 else ""
+        print(f"  {stage_name:15s} {backend:10s} {tokens:>12s} {cost:>10s}{free_marker}")
+
+    print(f"  {SYM_HLINE * 50}")
+    print(f"  {'GESAMT':15s} {'':10s} {'':>12s} ${total:.4f}")
+
+    if total == 0.0:
+        print(f"\n{SYM_OK} Alle Backends sind kostenlos. Keine Kosten erwartet.")
+    else:
+        print("\n  Hinweis: Schaetzung basierend auf durchschnittlichem Token-Verbrauch.")
+
+    return 0
+
+
 async def cmd_run(args: argparse.Namespace, config) -> int:
     raw_input = _get_input(args)
     if raw_input is None:
@@ -124,10 +233,40 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
     if hasattr(args, "format") and args.format:
         config.output.default_format = args.format
 
+    # Build style/visual overrides from CLI flags
+    style_overrides: dict = {}
+    if getattr(args, "style", None):
+        style_overrides["style"] = args.style
+    if getattr(args, "no_visuals", False):
+        style_overrides["no_visuals"] = True
+    if getattr(args, "visual_placement", None):
+        style_overrides["visual_placement"] = args.visual_placement
+    if getattr(args, "subject", None):
+        style_overrides["subject"] = args.subject
+
+    if style_overrides.get("style"):
+        print(f"Style: {style_overrides['style']}")
+
     # --dry-run: just show the plan, don't execute full pipeline
     if getattr(args, "dry_run", False):
         args_copy = argparse.Namespace(**vars(args))
         return await cmd_plan(args_copy, config)
+
+    # Cost warning (unless --yes flag)
+    if not getattr(args, "yes", False):
+        pipeline_check = Pipeline(config, BackendRouter(config))
+        total_cost, _ = pipeline_check.estimate_cost()
+        await pipeline_check.router.close()
+        if total_cost > 0.0:
+            print(f"\nGeschaetzte Kosten: ${total_cost:.4f}")
+            try:
+                answer = input("Fortfahren? [J/n] ").strip().lower()
+                if answer and answer not in ("j", "ja", "y", "yes", ""):
+                    print("Abgebrochen.")
+                    return 0
+            except (EOFError, KeyboardInterrupt):
+                print("\nAbgebrochen.")
+                return 0
 
     # Create session
     from .session import SessionStore, SessionRunner
@@ -151,18 +290,18 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
     runner = SessionRunner(store, pipeline, router)
 
     try:
-        session = await runner.run(session, preset=preset)
+        session = await runner.run(session, preset=preset, overrides=style_overrides or None, on_progress=_progress_printer)
     finally:
         await router.close()
 
     if session.status == "completed":
-        print(f"\n✓ Fertig in {session.total_elapsed_ms / 1000:.1f}s")
+        print(f"\n{SYM_OK} Fertig in {session.total_elapsed_ms / 1000:.1f}s")
         print(f"  Datei:   {session.output_path}")
         print(f"  Kosten:  ${session.total_cost_usd:.4f}")
         print(f"  Session: {session.id}")
         return 0
     else:
-        print(f"\n✗ Fehler in Stage '{session.failed_stage}'", file=sys.stderr)
+        print(f"\n{SYM_FAIL} Fehler in Stage '{session.failed_stage}'", file=sys.stderr)
         for error in session.failure_errors:
             print(f"  - {error}", file=sys.stderr)
         print(f"\n  Fortsetzen mit: schulpipeline resume {session.id}", file=sys.stderr)
@@ -210,18 +349,18 @@ async def cmd_resume(args: argparse.Namespace, config) -> int:
 
     try:
         if args.from_stage:
-            session = await runner.retry_from(session, args.from_stage, preset=preset)
+            session = await runner.retry_from(session, args.from_stage, preset=preset, on_progress=_progress_printer)
         else:
-            session = await runner.run(session, preset=preset)
+            session = await runner.run(session, preset=preset, on_progress=_progress_printer)
     finally:
         await router.close()
 
     if session.status == "completed":
-        print(f"\n✓ Fertig in {session.total_elapsed_ms / 1000:.1f}s")
+        print(f"\n{SYM_OK} Fertig in {session.total_elapsed_ms / 1000:.1f}s")
         print(f"  Datei:   {session.output_path}")
         return 0
     else:
-        print(f"\n✗ Fehler in Stage '{session.failed_stage}'", file=sys.stderr)
+        print(f"\n{SYM_FAIL} Fehler in Stage '{session.failed_stage}'", file=sys.stderr)
         for error in session.failure_errors:
             print(f"  - {error}", file=sys.stderr)
         return 1
@@ -238,7 +377,7 @@ def cmd_sessions(args, config) -> int:
     )
 
     if args.json:
-        print(json.dumps(entries, indent=2, ensure_ascii=False))
+        print(_json_dumps(entries, indent=2))
         return 0
 
     if not entries:
@@ -246,10 +385,10 @@ def cmd_sessions(args, config) -> int:
         return 0
 
     # Status symbols
-    symbols = {"completed": "✓", "failed": "✗", "running": "▶", "paused": "⏸", "created": "○"}
+    symbols = {"completed": SYM_OK, "failed": SYM_FAIL, "running": SYM_RUN, "paused": SYM_PAUSE, "created": SYM_PENDING}
 
     print(f"{'ID':10s} {'Status':4s} {'Titel':40s} {'Format':6s} {'Kosten':8s} {'Aktualisiert':20s}")
-    print("─" * 90)
+    print(SYM_HLINE * 90)
     for e in entries:
         sym = symbols.get(e.get("status", ""), "?")
         title = (e.get("title", "")[:38] + "..") if len(e.get("title", "")) > 40 else e.get("title", "")
@@ -275,7 +414,7 @@ def cmd_show(args, config) -> int:
         # Show specific stage data
         for snap in session.completed_stages:
             if snap.name == args.stage:
-                print(json.dumps(snap.data, indent=2, ensure_ascii=False))
+                print(_json_dumps(snap.data, indent=2))
                 return 0
         print(f"Stage '{args.stage}' nicht in Session gefunden", file=sys.stderr)
         return 1
@@ -301,11 +440,11 @@ def cmd_show(args, config) -> int:
 
     print(f"\nStages:")
     for snap in session.completed_stages:
-        sym = "✓" if snap.success else "✗"
+        sym = SYM_OK if snap.success else SYM_FAIL
         print(f"  {sym} {snap.name:12s} {snap.elapsed_ms:6d}ms  {snap.completed_at[:19]}")
         if snap.errors:
             for err in snap.errors:
-                print(f"    ✗ {err}")
+                print(f"    {SYM_FAIL} {err}")
 
     if session.failed_stage:
         print(f"\nFehlgeschlagen: {session.failed_stage}")
@@ -346,7 +485,7 @@ async def cmd_plan(args: argparse.Namespace, config) -> int:
 
     if result.success:
         plan_data = result.results[-1].data
-        print(json.dumps(plan_data, indent=2, ensure_ascii=False))
+        print(_json_dumps(plan_data, indent=2))
         return 0
     else:
         print(f"Plan fehlgeschlagen: {result.failed_stage}", file=sys.stderr)
@@ -355,24 +494,24 @@ async def cmd_plan(args: argparse.Namespace, config) -> int:
 
 def cmd_presets(args) -> int:
     if args.json:
-        print(json.dumps(list_presets(), indent=2, ensure_ascii=False))
+        print(_json_dumps(list_presets(), indent=2))
         return 0
 
-    print("═══ Was soll rauskommen? (--output-type) ═══\n")
+    print(f"{SYM_DLINE*3} Was soll rauskommen? (--output-type) {SYM_DLINE*3}\n")
     for key, preset in OUTPUT_PRESETS.items():
         print(f"  {key:25s} {preset.label:30s} → .{preset.format}")
 
-    print(f"\n═══ Welches Fach? (--subject) ═══\n")
+    print(f"\n{SYM_DLINE*3} Welches Fach? (--subject) {SYM_DLINE*3}\n")
     for key, preset in SUBJECT_PRESETS.items():
         print(f"  {key:25s} {preset.label:30s} [{preset.difficulty}]")
 
-    print(f"\n═══ Quick-Presets (--preset) ═══\n")
+    print(f"\n{SYM_DLINE*3} Quick-Presets (--preset) {SYM_DLINE*3}\n")
     for key, (out_key, sub_key) in sorted(QUICK_PRESETS.items()):
         out_label = OUTPUT_PRESETS[out_key].label
         sub_label = SUBJECT_PRESETS[sub_key].label
         print(f"  {key:30s} {out_label} → {sub_label}")
 
-    print(f"\n═══ Beispiele ═══\n")
+    print(f"\n{SYM_DLINE*3} Beispiele {SYM_DLINE*3}\n")
     print('  schulpipeline run --preset fiae-praesi-itsec "IT-Sicherheit im Unternehmen"')
     print('  schulpipeline run --output-type praesentation --subject netzwerktechnik "OSI-Modell"')
     print('  schulpipeline run --subject wirtschaft --input aufgaben.jpg')
@@ -383,7 +522,7 @@ def cmd_presets(args) -> int:
 def cmd_backends(config) -> int:
     print("Konfigurierte Backends:\n")
     for name, cfg in config.backends.items():
-        status = "✓" if cfg.is_available else "✗"
+        status = SYM_OK if cfg.is_available else SYM_FAIL
         reason = ""
         if not cfg.enabled:
             reason = " (deaktiviert)"
@@ -500,7 +639,7 @@ def _get_input(args: argparse.Namespace) -> str | Path | None:
         if path.exists():
             if path.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp", ".pdf"):
                 return path
-            return path.read_text(encoding="utf-8")
+            return _read_text_with_fallback(path)
         print(f"Warnung: Datei nicht gefunden: {args.input}", file=sys.stderr)
         return None
     if hasattr(args, "task") and args.task:
@@ -511,6 +650,13 @@ def _get_input(args: argparse.Namespace) -> str | Path | None:
 
 
 def main() -> None:
+    # Load .env file into os.environ (API keys etc.)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
     parser = build_parser()
     args = parser.parse_args()
 
@@ -523,6 +669,15 @@ def main() -> None:
         overrides["log_level"] = args.log_level
 
     config = load_config(args.config, overrides)
+
+    # Validate config for commands that need working backends
+    if args.command in ("run", "plan", "resume", "cost-estimate"):
+        from .config import validate_config
+        config_errors = validate_config(config)
+        if config_errors:
+            for err in config_errors:
+                print(f"Konfigurationsfehler: {err}", file=sys.stderr)
+            sys.exit(1)
 
     if hasattr(args, "output_dir") and args.output_dir:
         config.output.dir = args.output_dir
@@ -550,6 +705,8 @@ def main() -> None:
         sys.exit(asyncio.run(cmd_run(args, config)))
     elif args.command == "plan":
         sys.exit(asyncio.run(cmd_plan(args, config)))
+    elif args.command == "cost-estimate":
+        sys.exit(asyncio.run(cmd_cost_estimate(args, config)))
     elif args.command == "resume":
         sys.exit(asyncio.run(cmd_resume(args, config)))
     else:

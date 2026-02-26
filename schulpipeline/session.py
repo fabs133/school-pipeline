@@ -285,6 +285,55 @@ class SessionStore:
             return self.load(entries[0]["id"])
         return None
 
+    def purge(self, max_age_days: int = 30, max_count: int = 50) -> int:
+        """Remove old sessions, keeping running ones and respecting limits.
+
+        Returns the number of sessions removed.
+        """
+        index = self._load_index()
+        if not index:
+            return 0
+
+        entries = sorted(index.values(), key=lambda e: e.get("updated_at", ""), reverse=True)
+
+        to_delete: list[str] = []
+        now = datetime.now(tz=__import__("datetime").timezone.utc)
+
+        for i, entry in enumerate(entries):
+            sid = entry["id"]
+            # Never purge running sessions
+            if entry.get("status") == "running":
+                continue
+
+            # Delete if over max_count (after sorting by recency)
+            if i >= max_count:
+                to_delete.append(sid)
+                continue
+
+            # Delete if older than max_age_days
+            updated = entry.get("updated_at", "")
+            if updated:
+                try:
+                    ts = datetime.fromisoformat(updated.rstrip("Z")).replace(
+                        tzinfo=__import__("datetime").timezone.utc
+                    )
+                    age = (now - ts).days
+                    if age > max_age_days:
+                        to_delete.append(sid)
+                except (ValueError, TypeError):
+                    pass
+
+        for sid in to_delete:
+            path = self.dir / f"{sid}.json"
+            if path.exists():
+                path.unlink()
+            index.pop(sid, None)
+
+        if to_delete:
+            self._save_index(index)
+
+        return len(to_delete)
+
     # --- Index management ---
 
     def _load_index(self) -> dict[str, dict[str, Any]]:
@@ -338,7 +387,7 @@ class SessionRunner:
         self.pipeline = pipeline
         self.router = router
 
-    async def run(self, session: Session, preset=None) -> Session:
+    async def run(self, session: Session, preset=None, overrides: dict | None = None, on_progress=None) -> Session:
         """Run (or resume) a session through the pipeline.
 
         Skips already-completed stages. Saves after each stage.
@@ -360,6 +409,13 @@ class SessionRunner:
         }
         if preset:
             context["preset"] = preset
+        if session.subject:
+            context["subject_hint"] = session.subject
+
+        # Resolve style and visual configuration
+        from .styles import resolve_style, resolve_visual_config
+        context["style"] = resolve_style(self.pipeline.config, overrides)
+        context["visual_slots"] = resolve_visual_config(self.pipeline.config, overrides)
 
         # Inject completed stage data
         for snap in session.completed_stages:
@@ -370,14 +426,18 @@ class SessionRunner:
         self.store.save(session)
 
         t0 = time.monotonic()
+        total_stages = len(all_stages)
 
-        for stage in all_stages:
+        for i, stage in enumerate(all_stages):
             # Skip already-completed stages
             if stage.name in session.stage_names_completed:
                 continue
 
             session.current_stage = stage.name
             self.store.save(session)
+
+            if on_progress:
+                on_progress("stage_start", stage.name, i, total_stages)
 
             # Run the stage
             result = await stage.run(context, self.router, self.pipeline.config)
@@ -394,6 +454,9 @@ class SessionRunner:
             )
 
             if not result.success:
+                if on_progress:
+                    on_progress("stage_error", stage.name, i, total_stages,
+                                elapsed_ms=result.metadata.get("elapsed_ms", 0), errors=result.errors)
                 session.status = "failed"
                 session.failed_stage = stage.name
                 session.failure_errors = result.errors
@@ -421,6 +484,10 @@ class SessionRunner:
             context[stage.name] = result.data
             self.store.save(session)
 
+            if on_progress:
+                on_progress("stage_done", stage.name, i, total_stages,
+                            elapsed_ms=result.metadata.get("elapsed_ms", 0))
+
         # All stages done
         session.status = "completed"
         session.current_stage = ""
@@ -439,7 +506,7 @@ class SessionRunner:
         self.store.save(session)
         return session
 
-    async def retry_from(self, session: Session, stage_name: str, preset=None) -> Session:
+    async def retry_from(self, session: Session, stage_name: str, preset=None, overrides: dict | None = None, on_progress=None) -> Session:
         """Re-run a session starting from a specific stage.
 
         Drops all stage snapshots from `stage_name` onwards and re-runs.
@@ -461,7 +528,7 @@ class SessionRunner:
         session.failure_errors = []
         self.store.save(session)
 
-        return await self.run(session, preset=preset)
+        return await self.run(session, preset=preset, overrides=overrides, on_progress=on_progress)
 
 
 # ============================================================

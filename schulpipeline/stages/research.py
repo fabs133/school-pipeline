@@ -47,6 +47,7 @@ Regeln:
 class ResearchStage(BaseStage):
     name = "research"
     spec_path = "specs/research.json"
+    required_context = frozenset({"plan", "intake"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
         plan = context["plan"]
@@ -75,8 +76,17 @@ class ResearchStage(BaseStage):
             web_findings = await self._web_research(plan["sections"], config)
 
         # LLM research pass — always runs, enriched with web findings
+        prompt = RESEARCH_PROMPT
+        if not (config.research.enabled and config.research.use_web):
+            prompt += (
+                "\n\nWICHTIG: Webrecherche ist DEAKTIVIERT. "
+                "Verwende KEINE URLs als Quellen. "
+                "Alle Quellen muessen als 'llm_knowledge' markiert werden. "
+                "Erfinde KEINE URLs."
+            )
+
         messages = [
-            {"role": "system", "content": RESEARCH_PROMPT},
+            {"role": "system", "content": prompt},
             {"role": "user", "content": research_request},
         ]
 
@@ -97,6 +107,13 @@ class ResearchStage(BaseStage):
         )
 
         data = _parse_json_response(response.content)
+
+        # Sanitize: strip fabricated URLs when web is disabled
+        if not (config.research.enabled and config.research.use_web):
+            for section in data.get("sections", []):
+                for finding in section.get("findings", []):
+                    if finding.get("source", "").startswith("http"):
+                        finding["source"] = "llm_knowledge"
 
         # Merge web findings into LLM findings
         if web_findings:
