@@ -270,6 +270,16 @@ schulpipeline/
 - requests, pyyaml, python-pptx, python-docx, beautifulsoup4, Pillow, python-dotenv
 - At least one API key (Groq or Gemini, both free)
 
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding conventions, and PR workflow.
+
+## Getting Help
+
+- **Bug?** [Open a bug report](https://github.com/fabs133/school-pipeline/issues/new?template=bug_report.yml)
+- **Idea?** [Request a feature](https://github.com/fabs133/school-pipeline/issues/new?template=feature_request.yml)
+- **Security?** See [SECURITY.md](SECURITY.md)
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE)

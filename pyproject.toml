@@ -3,6 +3,15 @@ name = "schulpipeline"
 version = "1.0.0"
 description = "Spec-driven pipeline for automating school assignments"
 requires-python = ">=3.11"
+authors = [{name = "fabs133"}]
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["school", "pipeline", "automation", "pptx", "docx", "llm"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "requests>=2.31",
     "pyyaml>=6.0",
@@ -21,6 +30,12 @@ ollama = []  # no extra deps, just a config flag
 
 [project.scripts]
 schulpipeline = "schulpipeline.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/fabs133/school-pipeline"
+Repository = "https://github.com/fabs133/school-pipeline"
+Issues = "https://github.com/fabs133/school-pipeline/issues"
+Changelog = "https://github.com/fabs133/school-pipeline/blob/master/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["schulpipeline*"]
