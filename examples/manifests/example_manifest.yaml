@@ -1,0 +1,120 @@
+scan_root: examples\tasks
+total_files: 9
+subject_folders:
+- DE-BSP
+- WI-BSP
+summary:
+  info: 2
+  onenote_export: 1
+  task: 2
+  duplicate: 2
+  empty: 1
+  answer: 1
+bundles:
+- bundle_id: de-bsp_it_b1_a1_energie
+  title: 'Aufgabe: Erneuerbare Energien'
+  subject: DE-BSP
+  task_files:
+  - DE-BSP\IT_B1_A1_Energie.docx
+  info_files:
+  - DE-BSP\IT_B1_A1_Energie_Texte.docx
+  duplicates:
+  - DE-BSP\EnergieOneNote.docx
+  - DE-BSP\IT_B1_A1_Energie.docx.pdf
+- bundle_id: de-bsp_bewertungsbogen
+  title: 'Bewertungsbogen: Praesentation Erneuerbare Energien'
+  subject: DE-BSP
+  info_files:
+  - DE-BSP\Bewertungsbogen.docx
+- bundle_id: wi-bsp_aufgaben_angebot_nachfrage
+  title: 'Aufgaben: Angebot und Nachfrage'
+  subject: WI-BSP
+  task_files:
+  - WI-BSP\Aufgaben_Angebot_Nachfrage.docx
+  answer_files:
+  - WI-BSP\AngebotNachfrageOneNote.docx
+  duplicates:
+  - WI-BSP\Aufgaben_Angebot_Nachfrage.docx.pdf
+files:
+- path: DE-BSP\Bewertungsbogen.docx
+  role: info
+  confidence: 0.65
+  content_type: docx
+  size_bytes: 37081
+  bundle_id: de-bsp_bewertungsbogen
+  info_signals:
+  - Information(?:steil)?
+  tables: 1
+  empty_cells: 14
+- path: DE-BSP\EnergieOneNote.docx
+  role: onenote_export
+  confidence: 0.95
+  content_type: docx
+  size_bytes: 36620
+  bundle_id: de-bsp_it_b1_a1_energie
+  embedded_refs:
+  - IT_B1_A1_Energie.docx
+- path: DE-BSP\IT_B1_A1_Energie.docx
+  role: task
+  confidence: 0.95
+  content_type: docx
+  size_bytes: 37316
+  bundle_id: de-bsp_it_b1_a1_energie
+  task_signals:
+  - Aufgabe[n]?
+  - Formulieren Sie
+  - Recherchieren Sie
+  - Erstellen Sie
+  - Beschreiben Sie
+  info_signals:
+  - Definition
+- path: DE-BSP\IT_B1_A1_Energie.docx.pdf
+  role: duplicate
+  confidence: 0.95
+  content_type: pdf
+  size_bytes: 303
+  bundle_id: de-bsp_it_b1_a1_energie
+  duplicate_of: DE-BSP\IT_B1_A1_Energie.docx
+- path: DE-BSP\IT_B1_A1_Energie_Texte.docx
+  role: info
+  confidence: 0.9
+  content_type: docx
+  size_bytes: 37791
+  bundle_id: de-bsp_it_b1_a1_energie
+  info_signals:
+  - Information(?:steil)?
+  - Definition
+  - Man unterscheidet
+  - Beispiel(?:e)?
+- path: DE-BSP\Leer.docx
+  role: empty
+  confidence: 1.0
+  content_type: docx
+  size_bytes: 0
+- path: WI-BSP\AngebotNachfrageOneNote.docx
+  role: answer
+  confidence: 0.85
+  content_type: docx
+  size_bytes: 36763
+  bundle_id: wi-bsp_aufgaben_angebot_nachfrage
+  embedded_refs:
+  - Aufgaben_Angebot_Nachfrage.docx
+- path: WI-BSP\Aufgaben_Angebot_Nachfrage.docx
+  role: task
+  confidence: 0.95
+  content_type: docx
+  size_bytes: 37259
+  bundle_id: wi-bsp_aufgaben_angebot_nachfrage
+  task_signals:
+  - Aufgabe[n]?
+  - Beschreiben Sie
+  - Nennen Sie
+  tables: 1
+  empty_cells: 11
+- path: WI-BSP\Aufgaben_Angebot_Nachfrage.docx.pdf
+  role: duplicate
+  confidence: 0.95
+  content_type: pdf
+  size_bytes: 303
+  bundle_id: wi-bsp_aufgaben_angebot_nachfrage
+  duplicate_of: WI-BSP\Aufgaben_Angebot_Nachfrage.docx

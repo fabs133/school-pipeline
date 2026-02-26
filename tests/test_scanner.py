@@ -594,3 +594,35 @@ class TestOutput:
         assert m["total_files"] == 1
         assert m["files"][0]["role"] == "task"
         assert m["summary"]["task"] == 1
+
+
+# ============================================================
+# Integration: scan examples/ directory
+# ============================================================
+
+@pytest.mark.skipif(
+    not Path("examples/tasks").exists(),
+    reason="examples not available",
+)
+class TestExamplesIntegration:
+    """Integration tests using the synthetic example documents."""
+
+    def test_scan_example_directory(self):
+        result = scan_directory("examples/tasks")
+        assert result.total_files >= 8
+        roles = {f.role for f in result.files}
+        assert "task" in roles
+        assert "info" in roles
+        assert "duplicate" in roles
+        assert "empty" in roles
+
+    def test_onenote_and_answer_detected(self):
+        result = scan_directory("examples/tasks")
+        roles = [f.role for f in result.files]
+        assert "onenote_export" in roles or "answer" in roles
+
+    def test_bundles_created(self):
+        result = scan_directory("examples/tasks")
+        assert len(result.bundles) >= 2
+        # At least one bundle should have task files
+        assert any(b.task_files for b in result.bundles)
