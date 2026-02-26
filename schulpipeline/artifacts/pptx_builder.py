@@ -185,16 +185,21 @@ def _add_content_slide(
     p.font.color.rgb = _to_rgb(style.colors.primary)
     p.alignment = PP_ALIGN.LEFT
 
-    # Bullet points — narrow when visual is on the right
+    # Bullet points — narrow when visual is on the right, shorter when visual is below
     bullets = section.get("bullet_points", [])
     if bullets:
         left, top = Inches(margin), Inches(1.8)
         if has_visual and placement == "right":
             # Left half: ~50% of slide minus margin
             width = int(prs.slide_width * 0.5) - Inches(margin)
+            height = Inches(5.0)
+        elif has_visual and placement == "center":
+            # Shorten to avoid overlapping the visual placeholder below (starts at 4.0")
+            width = cw
+            height = Inches(2.0)
         else:
             width = cw
-        height = Inches(5.0)
+            height = Inches(5.0)
         txbox = slide.shapes.add_textbox(left, top, width, height)
         tf = txbox.text_frame
         tf.word_wrap = True
