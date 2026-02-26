@@ -33,12 +33,11 @@ The layout, styles, fonts, spacing — everything stays. Only text content chang
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-
-import logging
 
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
