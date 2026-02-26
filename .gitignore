@@ -28,3 +28,11 @@ Thumbs.db
 transfer.b64
 schulpipeline_1/
 schulpipeline_1_backup/
+
+# Student data — NEVER commit (copyright + privacy)
+Data_School_Tasks/
+
+# Scanner temp outputs
+_manifest.json
+_manifest.yaml
+_scan_result.txt
