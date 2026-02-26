@@ -270,8 +270,8 @@ schulpipeline/
 - Python 3.11+
 - requests, pyyaml, python-pptx, python-docx, beautifulsoup4, Pillow, python-dotenv
 - At least one API key (Groq or Gemini, both free):
-  - [Groq API-Key Anleitung](docs/guides/Groq_API-Key_erstellen_-_Schritt-fuer-Schritt-Anleitung.docx)
-  - [Gemini API-Key Anleitung](docs/guides/Gemini_API-Key_erstellen_-_Schritt-fuer-Schritt-Anleitung.docx)
+  - Groq: [English guide](docs/guides/How_to_Get_a_Groq_API_Key_-_Step_by_Step_Guide.docx) | [Deutsche Anleitung](docs/guides/Groq_API-Key_erstellen_-_Schritt-fuer-Schritt-Anleitung.docx)
+  - Gemini: [English guide](docs/guides/How_to_Get_a_Gemini_API_Key_-_Step_by_Step_Guide.docx) | [Deutsche Anleitung](docs/guides/Gemini_API-Key_erstellen_-_Schritt-fuer-Schritt-Anleitung.docx)
 
 ## Contributing
 
