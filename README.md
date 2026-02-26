@@ -19,6 +19,7 @@ pip install -e .
 # 3. Get free API keys (2 minutes)
 #    Groq:   https://console.groq.com → API Keys
 #    Gemini: https://aistudio.google.com/apikey
+#    Step-by-step guides: docs/guides/
 
 # 4. Set keys (or use a .env file — see .env.example)
 export GROQ_API_KEY="gsk_..."
@@ -268,7 +269,9 @@ schulpipeline/
 
 - Python 3.11+
 - requests, pyyaml, python-pptx, python-docx, beautifulsoup4, Pillow, python-dotenv
-- At least one API key (Groq or Gemini, both free)
+- At least one API key (Groq or Gemini, both free):
+  - [Groq API-Key Anleitung](docs/guides/Groq_API-Key_erstellen_-_Schritt-fuer-Schritt-Anleitung.docx)
+  - [Gemini API-Key Anleitung](docs/guides/Gemini_API-Key_erstellen_-_Schritt-fuer-Schritt-Anleitung.docx)
 
 ## Contributing
 
