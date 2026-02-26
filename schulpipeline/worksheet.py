@@ -22,11 +22,24 @@ If the teacher asked a question, the answer is under the question.
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
+
+_logger = logging.getLogger("schulpipeline.worksheet")
+
+
+def _safe_filename(title: str, max_len: int = 60) -> str:
+    """Convert a title to a safe filename."""
+    replacements = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+                    "Ä": "Ae", "Ö": "Oe", "Ü": "Ue"}
+    for old, new in replacements.items():
+        title = title.replace(old, new)
+    return "".join(c if c.isalnum() or c in "-_ " else "" for c in title).strip().replace(" ", "_")[:max_len]
 
 # ============================================================
 # Task Model
@@ -221,12 +234,31 @@ class SolveStage(BaseStage):
                 "solution": solution,
             })
 
-        return {
+        data = {
             "title": decomposed.get("title", "Arbeitsblatt"),
             "subject": decomposed.get("subject", ""),
             "solved_tasks": solved,
             "unsolvable_tasks": unsolvable,
         }
+
+        # Write output file (moved from pipeline.py post-processing)
+        output_dir = context.get("output_dir")
+        if output_dir:
+            output_dir = Path(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            title = data.get("title", "Arbeitsblatt")
+            safe_title = _safe_filename(title)
+            try:
+                docx_path = output_dir / f"{safe_title}.docx"
+                format_worksheet_as_docx(data, docx_path)
+                data["file_path"] = str(docx_path)
+            except Exception as e:
+                _logger.warning(f"DOCX generation failed, falling back to MD: {e}")
+                md_path = output_dir / f"{safe_title}.md"
+                md_path.write_text(format_worksheet_as_md(data), encoding="utf-8")
+                data["file_path"] = str(md_path)
+
+        return data
 
     async def _solve_task(self, task: dict, backend: Any, preset: Any) -> dict:
         """Solve a single task."""

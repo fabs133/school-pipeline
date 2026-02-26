@@ -101,12 +101,14 @@ class Session:
 
     @property
     def display_title(self) -> str:
-        """Short display title from task or first stage output."""
-        if self.completed_stages:
-            # Try to get title from plan stage
+        """Short display title from the first stage that provides one."""
+        title_stages = ("plan", "decompose", "classify_report", "audit", "synthesize")
+        for stage_name in title_stages:
             for snap in self.completed_stages:
-                if snap.name == "plan" and snap.success:
-                    return snap.data.get("title", self.task_input[:60])
+                if snap.name == stage_name and snap.success:
+                    title = snap.data.get("title")
+                    if title:
+                        return title[:60]
         return self.task_input[:60]
 
     def to_dict(self) -> dict[str, Any]:
@@ -391,16 +393,10 @@ class SessionRunner:
 
         Skips already-completed stages. Saves after each stage.
         """
-        from .stages import ArtifactStage, IntakeStage, PlanStage, ResearchStage, SynthesizeStage
+        from .stages import build_stages, resolve_stage_sequence
         from .stages.base import validate_against_spec
 
-        all_stages = [
-            IntakeStage(),
-            PlanStage(),
-            ResearchStage(),
-            SynthesizeStage(),
-            ArtifactStage(),
-        ]
+        all_stages = build_stages(resolve_stage_sequence(preset))
 
         # Build context from already-completed stages
         context: dict[str, Any] = {
@@ -510,10 +506,15 @@ class SessionRunner:
 
         Drops all stage snapshots from `stage_name` onwards and re-runs.
         """
-        stage_order = ["intake", "plan", "research", "synthesize", "artifact"]
+        from .stages import resolve_stage_sequence
+
+        stage_order = resolve_stage_sequence(preset)
 
         if stage_name not in stage_order:
-            raise ValueError(f"Unknown stage: {stage_name}")
+            raise ValueError(
+                f"Unknown stage '{stage_name}' for this preset. "
+                f"Valid stages: {stage_order}"
+            )
 
         idx = stage_order.index(stage_name)
 

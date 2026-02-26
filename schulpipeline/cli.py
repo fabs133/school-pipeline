@@ -114,6 +114,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--no-visuals", action="store_true", help="Keine visuellen Platzhalter")
     run_p.add_argument("--visual-placement", choices=["right", "center"], help="Platzierung der Visuals")
     run_p.add_argument("--yes", "-y", action="store_true", help="Kosten-Warnung überspringen")
+    run_p.add_argument("--agent", choices=["local_llm"],
+                       help="Code-Generierungs-Agent (nur fuer Coding-Presets)")
 
     # --- resume ---
     resume_p = subparsers.add_parser("resume", help="Letzte/bestimmte Session fortsetzen")
@@ -166,6 +168,15 @@ def build_parser() -> argparse.ArgumentParser:
     scan_p.add_argument("--json", dest="json_out", action="store_true", help="JSON-Manifest ausgeben")
     scan_p.add_argument("-o", "--output", dest="output_file", help="Manifest in Datei schreiben (YAML/JSON)")
     scan_p.add_argument("--verbose", "-v", action="store_true", help="Details pro Datei anzeigen")
+
+    # --- purge ---
+    purge_p = subparsers.add_parser("purge", help="Alte Sessions entfernen")
+    purge_p.add_argument("--max-age", type=int, default=30,
+                         help="Maximales Alter in Tagen (Standard: 30)")
+    purge_p.add_argument("--max-count", type=int, default=50,
+                         help="Maximale Anzahl Sessions (Standard: 50)")
+    purge_p.add_argument("--dry-run", action="store_true",
+                         help="Zeige was geloescht wuerde, ohne zu loeschen")
 
     # --- doctor ---
     subparsers.add_parser("doctor", help="System-Diagnose: Umgebung, Keys, Backends prüfen")
@@ -248,6 +259,8 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
         style_overrides["visual_placement"] = args.visual_placement
     if getattr(args, "subject", None):
         style_overrides["subject"] = args.subject
+    if getattr(args, "agent", None):
+        style_overrides["agent"] = args.agent
 
     if style_overrides.get("style"):
         print(f"Style: {style_overrides['style']}")
@@ -259,9 +272,7 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
 
     # Cost warning (unless --yes flag)
     if not getattr(args, "yes", False):
-        pipeline_check = Pipeline(config, BackendRouter(config))
-        total_cost, _ = pipeline_check.estimate_cost()
-        await pipeline_check.router.close()
+        total_cost, _ = Pipeline(config, None).estimate_cost()
         if total_cost > 0.0:
             print(f"\nGeschaetzte Kosten: ${total_cost:.4f}")
             try:
@@ -473,6 +484,49 @@ def cmd_delete(args, config) -> int:
         return 1
 
 
+def cmd_purge(args, config) -> int:
+    from .session import SessionStore
+
+    store = SessionStore()
+
+    if getattr(args, "dry_run", False):
+        # Preview: show what would be deleted without actually deleting
+        from datetime import datetime, timezone
+
+        entries = store.list_sessions(limit=200)
+        now = datetime.now(tz=timezone.utc)
+        to_delete = []
+        for i, e in enumerate(entries):
+            if e.get("status") == "running":
+                continue
+            if i >= args.max_count:
+                to_delete.append(e)
+                continue
+            updated = e.get("updated_at", "")
+            if updated:
+                try:
+                    ts = datetime.fromisoformat(updated.rstrip("Z")).replace(tzinfo=timezone.utc)
+                    if (now - ts).days > args.max_age:
+                        to_delete.append(e)
+                except (ValueError, TypeError):
+                    pass
+
+        if not to_delete:
+            print("Keine Sessions zum Loeschen gefunden.")
+            return 0
+        print(f"{len(to_delete)} Sessions wuerden geloescht:")
+        for e in to_delete:
+            print(f"  {e['id']}  {e.get('status', '?'):10s}  {e.get('title', '')[:40]}")
+        return 0
+
+    removed = store.purge(max_age_days=args.max_age, max_count=args.max_count)
+    if removed:
+        print(f"{removed} Sessions geloescht.")
+    else:
+        print("Keine Sessions zum Loeschen gefunden.")
+    return 0
+
+
 async def cmd_plan(args: argparse.Namespace, config) -> int:
     raw_input = _get_input(args)
     if raw_input is None:
@@ -527,6 +581,9 @@ def cmd_presets(args) -> int:
 def cmd_scan(args) -> int:
     """Scan a directory and classify documents."""
     from .scanner import scan_directory, to_manifest, to_summary
+
+    if getattr(args, "verbose", False) and getattr(args, "json_out", False):
+        print("Hinweis: --verbose wird ignoriert wenn --json aktiv ist.", file=sys.stderr)
 
     path = Path(args.path)
     if not path.is_dir():
@@ -753,6 +810,8 @@ def main() -> None:
         sys.exit(cmd_show(args, config))
     elif args.command == "delete":
         sys.exit(cmd_delete(args, config))
+    elif args.command == "purge":
+        sys.exit(cmd_purge(args, config))
     elif args.command == "run":
         sys.exit(asyncio.run(cmd_run(args, config)))
     elif args.command == "plan":

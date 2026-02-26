@@ -31,7 +31,7 @@ class ArtifactStage(BaseStage):
         )
 
         if is_project:
-            return await self._build_project(synthesis, intake, output_dir, backend, config, preset)
+            return await self._build_project(context, synthesis, intake, output_dir, backend, config, preset)
 
         # Standard artifact generation
         safe_title = _safe_filename(synthesis["title"])
@@ -74,11 +74,11 @@ class ArtifactStage(BaseStage):
         }
 
     async def _build_project(
-        self, synthesis: dict, intake: dict, output_dir: Path,
+        self, context: dict, synthesis: dict, intake: dict, output_dir: Path,
         backend: Any, config: Any, preset: Any
     ) -> dict[str, Any]:
         """Build a coding project using an agent."""
-        from ..agents import LocalLLMAgent, build_project_spec
+        from ..agents import AGENT_REGISTRY, build_project_spec
 
         # Build the project spec from synthesis
         spec = build_project_spec(synthesis, intake)
@@ -87,9 +87,15 @@ class ArtifactStage(BaseStage):
         project_dir = output_dir / _safe_filename(synthesis["title"])
         project_dir.mkdir(parents=True, exist_ok=True)
 
-        # For now, use local_llm agent (free)
-        # TODO: agent selection from config/CLI
-        agent = LocalLLMAgent(backend)
+        # Agent selection: CLI --agent override > default (local_llm)
+        agent_name = context.get("agent", "local_llm")
+        agent_cls = AGENT_REGISTRY.get(agent_name)
+        if agent_cls is None:
+            raise ValueError(
+                f"Unknown agent '{agent_name}'. "
+                f"Available: {list(AGENT_REGISTRY.keys())}"
+            )
+        agent = agent_cls(backend)
 
         # Estimate cost and warn if non-zero
         cost = await agent.estimate_cost(spec)

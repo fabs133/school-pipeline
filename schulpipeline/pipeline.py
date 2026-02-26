@@ -11,7 +11,7 @@ from typing import Any
 from .backends.router import BackendRouter
 from .config import PipelineConfig
 from .logging_config import set_stage
-from .stages import ArtifactStage, IntakeStage, PlanStage, ResearchStage, SynthesizeStage
+from .stages import STANDARD_STAGE_SEQUENCE, build_stages, resolve_stage_sequence
 from .stages.base import StageResult, validate_against_spec
 
 logger = logging.getLogger("schulpipeline.pipeline")
@@ -31,67 +31,22 @@ class PipelineResult:
 class Pipeline:
     """Runs the 5-stage pipeline: intake → plan → research → synthesize → artifact."""
 
-    def __init__(self, config: PipelineConfig, router: BackendRouter):
+    def __init__(self, config: PipelineConfig, router: BackendRouter | None):
         self.config = config
         self.router = router
-        self._standard_stages = [
-            IntakeStage(),
-            PlanStage(),
-            ResearchStage(),
-            SynthesizeStage(),
-            ArtifactStage(),
-        ]
 
     def estimate_cost(self, stages: list[str] | None = None) -> tuple[float, dict]:
-        """Estimate the cost of running the pipeline.
-
-        Args:
-            stages: List of stage names. If None, uses the standard 5 stages.
-
-        Returns:
-            (total_cost_usd, per_stage_breakdown)
-        """
+        """Estimate the cost of running the pipeline (pure calculation, no network)."""
         from .backends.pricing import estimate_pipeline_cost
 
-        stage_names = stages or [s.name for s in self._standard_stages]
+        stage_names = stages or STANDARD_STAGE_SEQUENCE
         effective_cascade = {name: self.config.cascade_for(name) for name in stage_names}
         return estimate_pipeline_cost(stage_names, effective_cascade)
 
     def _select_stages(self, context: dict[str, Any]) -> list:
-        """Select stage sequence based on preset/mode."""
-        preset = context.get("preset")
-
-        # Worksheet mode: intake → decompose → solve
-        if preset and preset.output_constraints.get("worksheet_mode"):
-            from .worksheet import DecomposeStage, SolveStage
-            return [IntakeStage(), DecomposeStage(), SolveStage()]
-
-        # Audit-only mode: intake → classify_docs → audit (no filling)
-        if preset and preset.output_constraints.get("audit_only"):
-            from .audit import AuditStage
-            from .documents import ClassifyDocsStage
-            return [IntakeStage(), ClassifyDocsStage(), AuditStage()]
-
-        # Full requirements report: intake → classify → audit → classify_report → amendments
-        if preset and preset.output_constraints.get("requirements_report"):
-            from .audit import AuditStage
-            from .documents import ClassifyDocsStage
-            from .requirements import AmendmentsStage, ClassifyReportStage
-            return [
-                IntakeStage(),
-                ClassifyDocsStage(),
-                AuditStage(),
-                ClassifyReportStage(),
-                AmendmentsStage(),
-            ]
-
-        # Template mode: intake → classify_docs → audit → fill_template
-        if preset and preset.output_constraints.get("template_mode"):
-            from .audit import AuditStage
-            from .documents import ClassifyDocsStage, FillTemplateStage
-            return [IntakeStage(), ClassifyDocsStage(), AuditStage(), FillTemplateStage()]
-
-        return self._standard_stages
+        """Select stage sequence based on preset/mode — delegates to the stage registry."""
+        sequence = resolve_stage_sequence(context.get("preset"))
+        return build_stages(sequence)
 
     async def run(
         self,
@@ -108,12 +63,22 @@ class Pipeline:
             overrides: Optional CLI overrides for style/visuals.
             on_progress: Optional callback(event, stage_name, stage_index, total_stages, **kw).
         """
+        if self.router is None:
+            raise RuntimeError(
+                "Pipeline.run() requires a router. "
+                "Pass router=BackendRouter(config) to Pipeline()."
+            )
         t0 = time.monotonic()
         context: dict[str, Any] = {"raw_input": raw_input}
         if preset:
             context["preset"] = preset
         if overrides and overrides.get("subject"):
             context["subject_hint"] = overrides["subject"]
+        if overrides and overrides.get("agent"):
+            context["agent"] = overrides["agent"]
+
+        # Make output_dir available to terminal stages for file writing
+        context["output_dir"] = str(Path(self.config.output.dir))
 
         # Resolve style and visual configuration
         from .styles import resolve_style, resolve_visual_config
@@ -134,11 +99,6 @@ class Pipeline:
         logger.info(f"Input: {str(raw_input)[:100]}")
 
         stages = self._select_stages(context)
-        is_worksheet = preset and hasattr(preset, 'output_constraints') and preset.output_constraints.get("worksheet_mode")
-        is_template = preset and hasattr(preset, 'output_constraints') and preset.output_constraints.get("template_mode")
-        is_audit = preset and hasattr(preset, 'output_constraints') and preset.output_constraints.get("audit_only")
-        is_req_report = preset and hasattr(preset, 'output_constraints') and preset.output_constraints.get("requirements_report")
-
         total_stages = len(stages)
         for i, stage in enumerate(stages):
             stage_name = stage.name
@@ -211,103 +171,6 @@ class Pipeline:
         elapsed = int((time.monotonic() - t0) * 1000)
         output_path = results[-1].data.get("file_path") if results else None
 
-        # For worksheet mode, generate the output document from solve results
-        if is_worksheet and results and results[-1].success:
-            solve_data = results[-1].data
-            output_dir = Path(self.config.output.dir)
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            from .worksheet import format_worksheet_as_docx, format_worksheet_as_md
-            title = solve_data.get("title", "Arbeitsblatt")
-            safe_title = "".join(c if c.isalnum() or c in "-_ " else "" for c in title).strip().replace(" ", "_")[:60]
-
-            # DOCX for formal output, MD as fallback
-            try:
-                docx_path = output_dir / f"{safe_title}.docx"
-                format_worksheet_as_docx(solve_data, docx_path)
-                output_path = str(docx_path)
-            except Exception as e:
-                logger.warning(f"DOCX generation failed, falling back to MD: {e}")
-                md_path = output_dir / f"{safe_title}.md"
-                md_content = format_worksheet_as_md(solve_data)
-                md_path.write_text(md_content, encoding="utf-8")
-                output_path = str(md_path)
-
-        # For template mode, apply filled fields to original template files
-        if is_template and results and results[-1].success:
-            fill_data = results[-1].data
-            output_dir = Path(self.config.output.dir)
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            from .documents import apply_to_docx, apply_to_pptx
-            for tmpl in fill_data.get("filled_templates", []):
-                filename = tmpl.get("template_filename", "output")
-                fields = tmpl.get("fields_filled", [])
-                # Check if we have the original template file
-                template_file = context.get("template_files", {}).get(filename)
-                if template_file and Path(template_file).exists():
-                    out = output_dir / f"filled_{filename}"
-                    if filename.endswith(".pptx"):
-                        apply_to_pptx(template_file, fields, out)
-                    else:
-                        apply_to_docx(template_file, fields, out)
-                    output_path = str(out)
-                    logger.info(f"Template filled: {out}")
-
-        # For audit mode (standalone or as part of template flow), generate audit report
-        audit_data = None
-        for r in results:
-            if r.stage == "audit" and r.success:
-                audit_data = r.data
-                break
-
-        if audit_data:
-            output_dir = Path(self.config.output.dir)
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            from .audit import format_audit_as_docx, format_audit_as_md
-            safe_title = "Vorgaben-Audit"
-
-            try:
-                audit_docx = output_dir / f"{safe_title}.docx"
-                format_audit_as_docx(audit_data, audit_docx)
-                # For audit-only mode, this IS the output
-                if is_audit:
-                    output_path = str(audit_docx)
-                else:
-                    logger.info(f"Audit report: {audit_docx}")
-            except Exception as e:
-                logger.warning(f"Audit DOCX failed, falling back to MD: {e}")
-                audit_md = output_dir / f"{safe_title}.md"
-                from .audit import format_audit_as_md
-                audit_md.write_text(format_audit_as_md(audit_data), encoding="utf-8")
-                if is_audit:
-                    output_path = str(audit_md)
-
-        # For requirements report mode, build the three-part document
-        if is_req_report and results:
-            output_dir = Path(self.config.output.dir)
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            # Collect data from stages
-            stage_data = {r.stage: r.data for r in results if r.success}
-            classify_report = stage_data.get("classify_report", {})
-            amendments = stage_data.get("amendments", {})
-            audit_for_report = stage_data.get("audit", {})
-
-            from .requirements import build_full_report, format_report_as_docx, format_report_as_md
-            full_report = build_full_report(classify_report, audit_for_report, amendments)
-
-            try:
-                docx_path = output_dir / "Anforderungsdokumentation.docx"
-                format_report_as_docx(full_report, docx_path)
-                output_path = str(docx_path)
-            except Exception as e:
-                logger.warning(f"Requirements DOCX failed, falling back to MD: {e}")
-                md_path = output_dir / "Anforderungsdokumentation.md"
-                md_path.write_text(format_report_as_md(full_report), encoding="utf-8")
-                output_path = str(md_path)
-
         logger.info(f"Pipeline completed in {elapsed}ms, cost: ${self.router.total_cost:.4f}")
         if output_path:
             logger.info(f"Output: {output_path}")
@@ -331,7 +194,7 @@ class Pipeline:
         context["visual_slots"] = resolve_visual_config(self.config, overrides)
         results: list[StageResult] = []
 
-        for stage in self._standard_stages[:2]:  # intake + plan only
+        for stage in build_stages(["intake", "plan"]):
             result = await stage.run(context, self.router, self.config)
             results.append(result)
 

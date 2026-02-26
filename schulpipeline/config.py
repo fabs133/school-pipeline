@@ -44,6 +44,24 @@ class OutputConfig:
     language: str = "de"
 
 
+# Default cascade order per stage — used when config.yaml doesn't specify one.
+DEFAULT_CASCADE: dict[str, list[str]] = {
+    "intake": ["gemini", "openai"],
+    "plan": ["groq", "mistral", "gemini"],
+    "research": ["groq", "mistral", "gemini"],
+    "synthesize": ["groq", "gemini", "mistral", "openai"],
+    "artifact": ["groq", "gemini", "mistral", "openai"],
+    "decompose": ["groq", "gemini", "mistral"],
+    "solve": ["groq", "gemini", "mistral", "openai"],
+    "classify_docs": ["groq", "gemini", "mistral"],
+    "fill_template": ["groq", "gemini", "mistral", "openai"],
+    "audit": ["groq", "gemini", "mistral"],
+    "classify_report": ["groq", "gemini", "mistral"],
+    "amendments": ["groq", "gemini", "mistral", "openai"],
+    "agent_codegen": ["groq", "gemini", "mistral", "openai"],
+}
+
+
 @dataclass
 class PipelineConfig:
     backends: dict[str, BackendConfig] = field(default_factory=dict)
@@ -55,30 +73,9 @@ class PipelineConfig:
     style: str | dict = "clean"
     visuals: bool | dict = True
 
-    # --- Defaults applied when config is sparse ---
-
-    DEFAULT_CASCADE: dict[str, list[str]] = field(default=None, init=False, repr=False)
-
-    def __post_init__(self):
-        self.DEFAULT_CASCADE = {
-            "intake": ["gemini", "openai"],
-            "plan": ["groq", "mistral", "gemini"],
-            "research": ["groq", "mistral", "gemini"],
-            "synthesize": ["groq", "gemini", "mistral", "openai"],
-            "artifact": ["groq", "gemini", "mistral", "openai"],
-            "decompose": ["groq", "gemini", "mistral"],
-            "solve": ["groq", "gemini", "mistral", "openai"],
-            "classify_docs": ["groq", "gemini", "mistral"],
-            "fill_template": ["groq", "gemini", "mistral", "openai"],
-            "audit": ["groq", "gemini", "mistral"],
-            "classify_report": ["groq", "gemini", "mistral"],
-            "amendments": ["groq", "gemini", "mistral", "openai"],
-            "agent_codegen": ["groq", "gemini", "mistral", "openai"],
-        }
-
     def cascade_for(self, stage: str) -> list[str]:
         """Get cascade order for a stage, filtering to available backends."""
-        order = self.cascade.get(stage, self.DEFAULT_CASCADE.get(stage, []))
+        order = self.cascade.get(stage, DEFAULT_CASCADE.get(stage, []))
         return [name for name in order if name in self.backends and self.backends[name].is_available]
 
     def available_backends(self) -> list[str]:

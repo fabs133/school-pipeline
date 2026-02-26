@@ -38,8 +38,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import logging
+
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
+
+_logger = logging.getLogger("schulpipeline.documents")
 
 # ============================================================
 # Document Role Model
@@ -261,11 +265,34 @@ class FillTemplateStage(BaseStage):
             )
             results.append(filled)
 
-        return {
+        data = {
             "filled_templates": results,
             "contradictions": contradictions,
             "source_summary": source_info,
         }
+
+        # Write output files (moved from pipeline.py post-processing)
+        output_dir = context.get("output_dir")
+        if output_dir:
+            output_dir = Path(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            for tmpl in results:
+                filename = tmpl.get("template_filename", "output")
+                fields = tmpl.get("fields_filled", [])
+                template_file = context.get("template_files", {}).get(filename)
+                if template_file and Path(template_file).exists():
+                    out = output_dir / f"filled_{filename}"
+                    try:
+                        if filename.endswith(".pptx"):
+                            apply_to_pptx(template_file, fields, out)
+                        else:
+                            apply_to_docx(template_file, fields, out)
+                        data["file_path"] = str(out)
+                        _logger.info(f"Template filled: {out}")
+                    except Exception as e:
+                        _logger.warning(f"Template fill failed for {filename}: {e}")
+
+        return data
 
     async def _fill_single_template(
         self, template: dict, source_info: dict, constraints: list[str],

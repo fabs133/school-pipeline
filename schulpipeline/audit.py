@@ -27,12 +27,16 @@ Only semantic ambiguity detection requires LLM assistance.
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
+
+_logger = logging.getLogger("schulpipeline.audit")
 
 # ============================================================
 # Audit Model
@@ -414,7 +418,7 @@ class AuditStage(BaseStage):
         else:
             verdict = "Vorgaben vollständig und konsistent"
 
-        return {
+        data = {
             "title": f"Vorgaben-Audit: {classified.get('title', 'Projekt')}",
             "documents_analyzed": [d.get("filename", "?") for d in documents],
             "findings": all_findings,
@@ -429,6 +433,37 @@ class AuditStage(BaseStage):
             },
             "missing_information": llm_findings.get("_missing_info", []),
         }
+
+        # Write audit report (moved from pipeline.py post-processing)
+        output_dir = context.get("output_dir")
+        if output_dir:
+            output_dir = Path(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            safe_title = "Vorgaben-Audit"
+            try:
+                audit_docx = output_dir / f"{safe_title}.docx"
+                format_audit_as_docx(data, audit_docx)
+                # For audit-only mode, this IS the primary output
+                is_audit_only = (
+                    preset and hasattr(preset, "output_constraints")
+                    and preset.output_constraints.get("audit_only")
+                )
+                if is_audit_only:
+                    data["file_path"] = str(audit_docx)
+                else:
+                    _logger.info(f"Supplementary audit report: {audit_docx}")
+            except Exception as e:
+                _logger.warning(f"Audit DOCX failed, falling back to MD: {e}")
+                audit_md = output_dir / f"{safe_title}.md"
+                audit_md.write_text(format_audit_as_md(data), encoding="utf-8")
+                is_audit_only = (
+                    preset and hasattr(preset, "output_constraints")
+                    and preset.output_constraints.get("audit_only")
+                )
+                if is_audit_only:
+                    data["file_path"] = str(audit_md)
+
+        return data
 
     async def _semantic_audit(self, documents: list[dict], backend: Any, preset: Any) -> dict:
         """Use LLM for semantic analysis of requirements."""

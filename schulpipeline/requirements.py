@@ -43,11 +43,15 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from .stages.base import BaseStage
 from .stages.intake import _parse_json_response
+
+_logger = logging.getLogger("schulpipeline.requirements")
 
 # ============================================================
 # Data Model
@@ -315,6 +319,27 @@ class AmendmentsStage(BaseStage):
 
         data = _parse_json_response(response.content)
         data["all_clear"] = False
+
+        # Write requirements report (moved from pipeline.py post-processing)
+        output_dir = context.get("output_dir")
+        if output_dir:
+            output_dir = Path(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            classify_report_data = context.get("classify_report", {})
+            audit_data = context.get("audit", {})
+            full_report = build_full_report(classify_report_data, audit_data, data)
+
+            try:
+                docx_path = output_dir / "Anforderungsdokumentation.docx"
+                format_report_as_docx(full_report, docx_path)
+                data["file_path"] = str(docx_path)
+            except Exception as e:
+                _logger.warning(f"Requirements DOCX failed, falling back to MD: {e}")
+                md_path = output_dir / "Anforderungsdokumentation.md"
+                md_path.write_text(format_report_as_md(full_report), encoding="utf-8")
+                data["file_path"] = str(md_path)
+
         return data
 
 
