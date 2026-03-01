@@ -239,12 +239,20 @@ python tests/run_tests.py
 
 ## slide-forge Integration
 
-PPTX output uses [slide-forge](../slide-forge/) as the rendering backend. The integration works in two modes:
+PPTX output uses [slide-forge](https://github.com/fabs133/slide-forge) as the rendering backend (installed automatically as a dependency). The integration works in two modes:
 
 1. **Direct rendering** — synthesis output is converted to a slide-forge `Presentation` and rendered to PPTX immediately
 2. **Review mode** — the presentation is sent to slide-forge's web editor for manual review and editing before export
 
-Bullet point verbosity (keywords, sentences, academic) is controlled during the **synthesize** stage via the preset's style mapping. The web editor is for reordering and editing content, not changing verbosity — that must be set before generation.
+Bullet point verbosity is controlled during the **synthesize** stage via three styles:
+
+| Style | Description |
+|-------|-------------|
+| `keywords` | Single keywords or short phrases (2-3 words) |
+| `sentences` | One complete sentence per bullet (8-15 words) — **default for presentations** |
+| `academic` | Formal language with domain terminology and references |
+
+The style is set at generation time by the preset's style mapping. The web editor is for reordering and editing content, not changing verbosity.
 
 Key integration files:
 - `schulpipeline/artifacts/converter.py` — converts synthesis output to slide-forge models
@@ -285,7 +293,9 @@ schulpipeline/
 ## Requirements
 
 - Python 3.11+
-- requests, pyyaml, python-pptx, python-docx, beautifulsoup4, Pillow, python-dotenv
+- Core: requests, pyyaml, python-pptx, python-docx, beautifulsoup4, Pillow, python-dotenv, pydantic
+- PPTX rendering: [slideforge](https://github.com/fabs133/slide-forge) (installed automatically)
+- Optional: `pip install -e ".[review]"` for the interactive slide-forge review server (FastAPI, uvicorn, httpx)
 - At least one API key (Groq or Gemini, both free):
   - Groq: [English guide](docs/guides/How_to_Get_a_Groq_API_Key_-_Step_by_Step_Guide.docx) | [Deutsche Anleitung](docs/guides/Groq_API-Key_erstellen_-_Schritt-fuer-Schritt-Anleitung.docx)
   - Gemini: [English guide](docs/guides/How_to_Get_a_Gemini_API_Key_-_Step_by_Step_Guide.docx) | [Deutsche Anleitung](docs/guides/Gemini_API-Key_erstellen_-_Schritt-fuer-Schritt-Anleitung.docx)
