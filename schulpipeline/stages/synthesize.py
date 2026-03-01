@@ -147,12 +147,10 @@ def _build_slideforge_style_block(preset) -> str:
     from ..artifacts.converter import _PRESET_STYLE_MAP
 
     if preset:
-        from slideforge.models import PresentationStyle
-        pres_style = _PRESET_STYLE_MAP.get(preset.style, PresentationStyle.SENTENCES)
+        style_val = _PRESET_STYLE_MAP.get(preset.style, "sentences")
     else:
-        pres_style = "sentences"
+        style_val = "sentences"
 
-    style_val = pres_style.value if hasattr(pres_style, "value") else pres_style
     instruction = get_style_instruction(style_val)
 
     return f"""

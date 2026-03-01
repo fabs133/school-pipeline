@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from slideforge.models import Presentation, PresentationStyle, Slide
-
 from .slide_registry import classify_presentation
 
 if TYPE_CHECKING:
+    from slideforge.models import Presentation
+
     from ..presets import ResolvedPreset
 
 # Maps SlideTypeSpec.key → slideforge layout name
@@ -20,11 +20,11 @@ _SPEC_TO_LAYOUT: dict[str, str] = {
     "section_break": "SP_SectionBreak",
 }
 
-# Maps schulpipeline preset style → slideforge PresentationStyle
-_PRESET_STYLE_MAP: dict[str, PresentationStyle] = {
-    "bullet-heavy": PresentationStyle.SENTENCES,
-    "compact":      PresentationStyle.SENTENCES,
-    "prose":        PresentationStyle.SENTENCES,
+# Maps schulpipeline preset style → slideforge PresentationStyle value string
+_PRESET_STYLE_MAP: dict[str, str] = {
+    "bullet-heavy": "sentences",
+    "compact":      "sentences",
+    "prose":        "sentences",
 }
 
 
@@ -47,6 +47,8 @@ def synthesis_to_presentation(
     Returns:
         A slideforge Presentation ready for rendering or review.
     """
+    from slideforge.models import Presentation, PresentationStyle, Slide
+
     sections = synthesis.get("sections", [])
     title = synthesis.get("title", "Präsentation")
     sources = synthesis.get("sources", [])
@@ -89,7 +91,8 @@ def synthesis_to_presentation(
     if style:
         pres_style = PresentationStyle(style)
     elif preset:
-        pres_style = _PRESET_STYLE_MAP.get(preset.style, PresentationStyle.SENTENCES)
+        style_str = _PRESET_STYLE_MAP.get(preset.style, "sentences")
+        pres_style = PresentationStyle(style_str)
     else:
         pres_style = PresentationStyle.SENTENCES
 

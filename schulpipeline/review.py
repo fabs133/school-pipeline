@@ -7,8 +7,10 @@ import threading
 import time
 import webbrowser
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from slideforge.models import Presentation
+if TYPE_CHECKING:
+    from slideforge.models import Presentation
 
 
 def run_review(presentation: Presentation) -> Presentation:
