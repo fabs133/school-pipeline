@@ -124,9 +124,7 @@ class OpenAICompatibleBackend:
         :return: The generated LLMResponse object.
         :rtype: LLMResponse
         """
-        return await asyncio.to_thread(
-            self._sync_complete, messages, temperature, max_tokens, response_format
-        )
+        return await asyncio.to_thread(self._sync_complete, messages, temperature, max_tokens, response_format)
 
     async def complete_vision(
         self,

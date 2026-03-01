@@ -27,10 +27,17 @@ _TYPE_ICONS = {
 }
 
 # Headings that indicate a sources section
-_SOURCES_KEYWORDS = frozenset({
-    "quellen", "quellenangaben", "referenzen",
-    "literaturverzeichnis", "literatur", "sources", "references",
-})
+_SOURCES_KEYWORDS = frozenset(
+    {
+        "quellen",
+        "quellenangaben",
+        "referenzen",
+        "literaturverzeichnis",
+        "literatur",
+        "sources",
+        "references",
+    }
+)
 
 
 def build_docx(
@@ -95,7 +102,7 @@ def build_docx(
         # Visual placeholders
         visuals = section.get("visuals", [])
         if visual_config.enabled and visuals:
-            for visual in visuals[:visual_config.max_per_slide]:
+            for visual in visuals[: visual_config.max_per_slide]:
                 _add_visual_placeholder(doc, visual, visual_style)
 
     # Deduplicated sources block
@@ -118,7 +125,9 @@ def build_docx(
 
 
 def _add_visual_placeholder(
-    doc: Document, visual: dict, style: VisualStyle,
+    doc: Document,
+    visual: dict,
+    style: VisualStyle,
 ) -> None:
     """Add a gray italic placeholder paragraph for a visual element."""
     icon = _TYPE_ICONS.get(visual.get("type", ""), "[Bild]")

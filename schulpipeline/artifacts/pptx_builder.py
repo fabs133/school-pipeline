@@ -1,4 +1,5 @@
 """PPTX artifact builder — delegates to slideforge renderer."""
+
 from __future__ import annotations
 
 from pathlib import Path

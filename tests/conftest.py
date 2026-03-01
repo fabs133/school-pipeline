@@ -13,6 +13,7 @@ from schulpipeline.config import BackendConfig, OutputConfig, PipelineConfig, Re
 
 # --- Mock Backend ---
 
+
 class MockBackend:
     """Deterministic backend for testing — returns pre-configured responses."""
 
@@ -63,89 +64,192 @@ class MockBackend:
 # --- Default mock responses per stage ---
 
 DEFAULT_STAGE_RESPONSES = {
-    "Aufgaben-Parser": json.dumps({
-        "task_text": "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit mindestens 8 Folien.",
-        "subject": "IT-Sicherheit",
-        "task_type": "presentation",
-        "constraints": {
-            "page_count": None,
-            "slide_count": 8,
-            "word_count": None,
-            "language": "de",
-            "format": "pptx",
-            "due_date": None,
-            "specific_requirements": ["mindestens 8 Folien", "Quellen angeben"]
-        },
-        "raw_input_type": "text"
-    }),
-    "Planungsassistent": json.dumps({
-        "title": "IT-Sicherheit im Unternehmen",
-        "artifact_type": "pptx",
-        "sections": [
-            {"id": "section_01", "title": "IT-Sicherheit im Unternehmen", "purpose": "Titelfolie",
-             "research_queries": [], "estimated_length": "short"},
-            {"id": "section_02", "title": "Was ist IT-Sicherheit?", "purpose": "Definition und Grundbegriffe",
-             "research_queries": ["IT-Sicherheit Definition", "Schutzziele CIA"], "estimated_length": "medium"},
-            {"id": "section_03", "title": "Bedrohungen", "purpose": "Typische Angriffsvektoren",
-             "research_queries": ["Cyberangriffe Arten", "Phishing Ransomware"], "estimated_length": "medium"},
-            {"id": "section_04", "title": "Schutzmaßnahmen", "purpose": "Technische und organisatorische Maßnahmen",
-             "research_queries": ["IT-Sicherheit Maßnahmen", "Firewall VPN"], "estimated_length": "medium"},
-            {"id": "section_05", "title": "Quellen", "purpose": "Quellenangaben",
-             "research_queries": [], "estimated_length": "short"},
-        ],
-        "style_notes": "Sachlich, Stichpunkte, Berufsschul-Niveau"
-    }),
-    "Recherche-Assistent": json.dumps({
-        "sections": [
-            {"section_id": "section_01", "findings": [
-                {"content": "Titelfolie", "source": "llm_knowledge", "relevance": 1.0}
-            ], "sufficient": True},
-            {"section_id": "section_02", "findings": [
-                {"content": "IT-Sicherheit umfasst den Schutz von Informationen und IT-Systemen vor unbefugtem Zugriff, Manipulation und Ausfall.", "source": "llm_knowledge", "relevance": 0.95},
-                {"content": "Die drei Schutzziele sind Vertraulichkeit (Confidentiality), Integrität (Integrity) und Verfügbarkeit (Availability) — das CIA-Triad.", "source": "llm_knowledge", "relevance": 0.95},
-            ], "sufficient": True},
-            {"section_id": "section_03", "findings": [
-                {"content": "Phishing ist die häufigste Angriffsmethode — über 80% aller Cyberangriffe beginnen mit einer Phishing-Mail.", "source": "llm_knowledge", "relevance": 0.9},
-                {"content": "Ransomware verschlüsselt Daten und fordert Lösegeld. Bekannte Beispiele: WannaCry, NotPetya.", "source": "llm_knowledge", "relevance": 0.9},
-            ], "sufficient": True},
-            {"section_id": "section_04", "findings": [
-                {"content": "Technische Maßnahmen: Firewalls, VPN, Verschlüsselung, regelmäßige Updates, Backups.", "source": "llm_knowledge", "relevance": 0.9},
-                {"content": "Organisatorische Maßnahmen: Schulungen, Zugriffsrechte, Sicherheitsrichtlinien, Incident Response Plan.", "source": "llm_knowledge", "relevance": 0.85},
-            ], "sufficient": True},
-            {"section_id": "section_05", "findings": [
-                {"content": "Quellenfolie", "source": "llm_knowledge", "relevance": 1.0}
-            ], "sufficient": True},
-        ]
-    }),
-    "Präsentations-Autor": json.dumps({
-        "title": "IT-Sicherheit im Unternehmen",
-        "sections": [
-            {"section_id": "section_01", "heading": "IT-Sicherheit im Unternehmen",
-             "content": "Eine Übersicht über Grundlagen, Bedrohungen und Schutzmaßnahmen",
-             "bullet_points": [], "speaker_notes": None},
-            {"section_id": "section_02", "heading": "Was ist IT-Sicherheit?",
-             "content": "IT-Sicherheit schützt Informationen und Systeme.",
-             "bullet_points": ["Schutz von Informationen und IT-Systemen", "CIA-Triad: Vertraulichkeit, Integrität, Verfügbarkeit", "Gesetzliche Grundlage: BSI-Gesetz, DSGVO"],
-             "speaker_notes": "Die drei Schutzziele bilden die Grundlage jeder Sicherheitsstrategie."},
-            {"section_id": "section_03", "heading": "Bedrohungen",
-             "content": "Cyberangriffe nehmen stetig zu.",
-             "bullet_points": ["Phishing — häufigste Angriffsmethode", "Ransomware — Datenverschlüsselung und Erpressung", "Social Engineering — Manipulation von Mitarbeitern"],
-             "speaker_notes": "Über 80% aller Angriffe beginnen mit einer Phishing-Mail."},
-            {"section_id": "section_04", "heading": "Schutzmaßnahmen",
-             "content": "Technische und organisatorische Maßnahmen.",
-             "bullet_points": ["Firewalls und VPN", "Regelmäßige Updates und Backups", "Mitarbeiterschulungen", "Incident Response Plan"],
-             "speaker_notes": "Die beste Technik hilft nichts ohne geschulte Mitarbeiter."},
-            {"section_id": "section_05", "heading": "Quellen",
-             "content": "Verwendete Quellen und Referenzen zur IT-Sicherheit.",
-             "bullet_points": ["BSI — Bundesamt für Sicherheit in der Informationstechnik", "OWASP Top 10"],
-             "speaker_notes": None},
-        ],
-        "sources": ["BSI — Bundesamt für Sicherheit in der Informationstechnik", "OWASP Top 10"]
-    }),
+    "Aufgaben-Parser": json.dumps(
+        {
+            "task_text": "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit mindestens 8 Folien.",
+            "subject": "IT-Sicherheit",
+            "task_type": "presentation",
+            "constraints": {
+                "page_count": None,
+                "slide_count": 8,
+                "word_count": None,
+                "language": "de",
+                "format": "pptx",
+                "due_date": None,
+                "specific_requirements": ["mindestens 8 Folien", "Quellen angeben"],
+            },
+            "raw_input_type": "text",
+        }
+    ),
+    "Planungsassistent": json.dumps(
+        {
+            "title": "IT-Sicherheit im Unternehmen",
+            "artifact_type": "pptx",
+            "sections": [
+                {
+                    "id": "section_01",
+                    "title": "IT-Sicherheit im Unternehmen",
+                    "purpose": "Titelfolie",
+                    "research_queries": [],
+                    "estimated_length": "short",
+                },
+                {
+                    "id": "section_02",
+                    "title": "Was ist IT-Sicherheit?",
+                    "purpose": "Definition und Grundbegriffe",
+                    "research_queries": ["IT-Sicherheit Definition", "Schutzziele CIA"],
+                    "estimated_length": "medium",
+                },
+                {
+                    "id": "section_03",
+                    "title": "Bedrohungen",
+                    "purpose": "Typische Angriffsvektoren",
+                    "research_queries": ["Cyberangriffe Arten", "Phishing Ransomware"],
+                    "estimated_length": "medium",
+                },
+                {
+                    "id": "section_04",
+                    "title": "Schutzmaßnahmen",
+                    "purpose": "Technische und organisatorische Maßnahmen",
+                    "research_queries": ["IT-Sicherheit Maßnahmen", "Firewall VPN"],
+                    "estimated_length": "medium",
+                },
+                {
+                    "id": "section_05",
+                    "title": "Quellen",
+                    "purpose": "Quellenangaben",
+                    "research_queries": [],
+                    "estimated_length": "short",
+                },
+            ],
+            "style_notes": "Sachlich, Stichpunkte, Berufsschul-Niveau",
+        }
+    ),
+    "Recherche-Assistent": json.dumps(
+        {
+            "sections": [
+                {
+                    "section_id": "section_01",
+                    "findings": [{"content": "Titelfolie", "source": "llm_knowledge", "relevance": 1.0}],
+                    "sufficient": True,
+                },
+                {
+                    "section_id": "section_02",
+                    "findings": [
+                        {
+                            "content": "IT-Sicherheit umfasst den Schutz von Informationen und IT-Systemen vor unbefugtem Zugriff, Manipulation und Ausfall.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.95,
+                        },
+                        {
+                            "content": "Die drei Schutzziele sind Vertraulichkeit (Confidentiality), Integrität (Integrity) und Verfügbarkeit (Availability) — das CIA-Triad.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.95,
+                        },
+                    ],
+                    "sufficient": True,
+                },
+                {
+                    "section_id": "section_03",
+                    "findings": [
+                        {
+                            "content": "Phishing ist die häufigste Angriffsmethode — über 80% aller Cyberangriffe beginnen mit einer Phishing-Mail.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.9,
+                        },
+                        {
+                            "content": "Ransomware verschlüsselt Daten und fordert Lösegeld. Bekannte Beispiele: WannaCry, NotPetya.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.9,
+                        },
+                    ],
+                    "sufficient": True,
+                },
+                {
+                    "section_id": "section_04",
+                    "findings": [
+                        {
+                            "content": "Technische Maßnahmen: Firewalls, VPN, Verschlüsselung, regelmäßige Updates, Backups.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.9,
+                        },
+                        {
+                            "content": "Organisatorische Maßnahmen: Schulungen, Zugriffsrechte, Sicherheitsrichtlinien, Incident Response Plan.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.85,
+                        },
+                    ],
+                    "sufficient": True,
+                },
+                {
+                    "section_id": "section_05",
+                    "findings": [{"content": "Quellenfolie", "source": "llm_knowledge", "relevance": 1.0}],
+                    "sufficient": True,
+                },
+            ]
+        }
+    ),
+    "Präsentations-Autor": json.dumps(
+        {
+            "title": "IT-Sicherheit im Unternehmen",
+            "sections": [
+                {
+                    "section_id": "section_01",
+                    "heading": "IT-Sicherheit im Unternehmen",
+                    "content": "Eine Übersicht über Grundlagen, Bedrohungen und Schutzmaßnahmen",
+                    "bullet_points": [],
+                    "speaker_notes": None,
+                },
+                {
+                    "section_id": "section_02",
+                    "heading": "Was ist IT-Sicherheit?",
+                    "content": "IT-Sicherheit schützt Informationen und Systeme.",
+                    "bullet_points": [
+                        "Schutz von Informationen und IT-Systemen",
+                        "CIA-Triad: Vertraulichkeit, Integrität, Verfügbarkeit",
+                        "Gesetzliche Grundlage: BSI-Gesetz, DSGVO",
+                    ],
+                    "speaker_notes": "Die drei Schutzziele bilden die Grundlage jeder Sicherheitsstrategie.",
+                },
+                {
+                    "section_id": "section_03",
+                    "heading": "Bedrohungen",
+                    "content": "Cyberangriffe nehmen stetig zu.",
+                    "bullet_points": [
+                        "Phishing — häufigste Angriffsmethode",
+                        "Ransomware — Datenverschlüsselung und Erpressung",
+                        "Social Engineering — Manipulation von Mitarbeitern",
+                    ],
+                    "speaker_notes": "Über 80% aller Angriffe beginnen mit einer Phishing-Mail.",
+                },
+                {
+                    "section_id": "section_04",
+                    "heading": "Schutzmaßnahmen",
+                    "content": "Technische und organisatorische Maßnahmen.",
+                    "bullet_points": [
+                        "Firewalls und VPN",
+                        "Regelmäßige Updates und Backups",
+                        "Mitarbeiterschulungen",
+                        "Incident Response Plan",
+                    ],
+                    "speaker_notes": "Die beste Technik hilft nichts ohne geschulte Mitarbeiter.",
+                },
+                {
+                    "section_id": "section_05",
+                    "heading": "Quellen",
+                    "content": "Verwendete Quellen und Referenzen zur IT-Sicherheit.",
+                    "bullet_points": ["BSI — Bundesamt für Sicherheit in der Informationstechnik", "OWASP Top 10"],
+                    "speaker_notes": None,
+                },
+            ],
+            "sources": ["BSI — Bundesamt für Sicherheit in der Informationstechnik", "OWASP Top 10"],
+        }
+    ),
 }
 
 
 # --- Fixtures ---
+
 
 @pytest.fixture
 def mock_backend():
@@ -235,34 +339,40 @@ def synthesis_data():
 def synthesis_data_with_visuals():
     """Synthesis data that includes visual slot data on a content slide."""
     data = json.loads(DEFAULT_STAGE_RESPONSES["Präsentations-Autor"])
-    data["sections"][2]["visuals"] = [{
-        "type": "diagram",
-        "intent": "Übersicht der häufigsten Angriffsarten",
-        "placement": "right",
-        "search_hint": "cyber attack types infographic",
-    }]
+    data["sections"][2]["visuals"] = [
+        {
+            "type": "diagram",
+            "intent": "Übersicht der häufigsten Angriffsarten",
+            "placement": "right",
+            "search_hint": "cyber attack types infographic",
+        }
+    ]
     return data
 
 
 @pytest.fixture
 def clean_style():
     from schulpipeline.styles import DEFAULT_STYLE
+
     return DEFAULT_STYLE
 
 
 @pytest.fixture
 def modern_style():
     from schulpipeline.styles import STYLE_PRESETS
+
     return STYLE_PRESETS["modern"]
 
 
 @pytest.fixture
 def visual_config_enabled():
     from schulpipeline.styles import DEFAULT_VISUAL_SLOTS
+
     return DEFAULT_VISUAL_SLOTS
 
 
 @pytest.fixture
 def visual_config_disabled():
     from schulpipeline.styles import DISABLED_VISUAL_SLOTS
+
     return DISABLED_VISUAL_SLOTS

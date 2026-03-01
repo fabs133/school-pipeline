@@ -22,321 +22,419 @@ from schulpipeline.config import BackendConfig, OutputConfig, PipelineConfig, Re
 
 DEFAULT_RESPONSES = {
     # --- Worksheet-specific (must come BEFORE shorter keys to avoid substring collision) ---
-    "Aufgaben-Parser für Schularbeitsblätter": json.dumps({
-        "title": "Gewinnverteilung OHG/KG",
-        "subject": "Wirtschaft",
-        "tasks": [
-            {
-                "id": "aufgabe_1a",
-                "label": "Übung 2, Aufgabe 1a",
-                "task_type": "table_fill",
-                "text": "Der Gewinn der Baumeister OHG beträgt 130.000 €. Berechnen Sie die Gewinnaufteilung nach §121 HGB.",
-                "context": "4% Zinsen auf Kapitalanteil, Rest nach Köpfen",
-                "table_structure": {
-                    "headers": ["Name", "Kapitalanteil", "4% Zinsen", "Restgewinn", "Gesamtgewinn"],
-                    "rows": [
-                        {"label": "Bauer", "values": ["100.000 €", "", "", ""]},
-                        {"label": "Müller", "values": ["150.000 €", "", "", ""]}
-                    ]
-                },
-                "data": {"gewinn": 130000, "zinssatz": 0.04},
-                "external_url": "",
-                "solvable": True,
-                "skip_reason": ""
-            },
-            {
-                "id": "uebung_1",
-                "label": "Übung 1",
-                "task_type": "external_link",
-                "text": "Quiz auf lernnetz24.de",
-                "context": "",
-                "table_structure": None,
-                "data": {},
-                "external_url": "https://www.lernnetz24.de/bwl/hinweise/99.html",
-                "solvable": False,
-                "skip_reason": "Externer Link — Quiz muss im Browser bearbeitet werden"
-            }
-        ]
-    }),
-    "Aufgaben-Löser für Schulaufgaben": json.dumps({
-        "answer": "Bauer erhält 25.000 € Gesamtgewinn, Müller erhält 66.000 €",
-        "table_data": {
-            "headers": ["Name", "Kapitalanteil", "4% Zinsen", "Restgewinn", "Gesamtgewinn"],
-            "rows": [
-                {"label": "Bauer", "values": ["100.000 €", "4.000 €", "56.000 €", "60.000 €"]},
-                {"label": "Müller", "values": ["150.000 €", "6.000 €", "56.000 €", "62.000 €"]},
-                {"label": "Summe", "values": ["250.000 €", "10.000 €", "112.000 €", "122.000 €"]}
-            ]
-        },
-        "calculation_steps": [
-            "4% von 100.000 = 4.000 €",
-            "4% von 150.000 = 6.000 €",
-            "Restgewinn: 130.000 - 10.000 = 120.000 €",
-            "Pro Kopf: 120.000 / 2 = 60.000 €"
-        ],
-        "confidence": 0.95
-    }),
-    # --- Document classification & template filling ---
-    "Dokument-Klassifikator": json.dumps({
-        "documents": [
-            {
-                "id": "doc_01",
-                "filename": "Projektantrag.docx",
-                "role": "template",
-                "reasoning": "Formular mit Leerfeldern",
-                "fields": [
-                    {
-                        "id": "field_01",
-                        "label": "Projektbezeichnung",
-                        "field_type": "text",
-                        "location": "Zeile 3",
-                        "current_value": "",
-                        "max_length": 80,
-                        "constraints": ["einzeilig"]
+    "Aufgaben-Parser für Schularbeitsblätter": json.dumps(
+        {
+            "title": "Gewinnverteilung OHG/KG",
+            "subject": "Wirtschaft",
+            "tasks": [
+                {
+                    "id": "aufgabe_1a",
+                    "label": "Übung 2, Aufgabe 1a",
+                    "task_type": "table_fill",
+                    "text": "Der Gewinn der Baumeister OHG beträgt 130.000 €. Berechnen Sie die Gewinnaufteilung nach §121 HGB.",
+                    "context": "4% Zinsen auf Kapitalanteil, Rest nach Köpfen",
+                    "table_structure": {
+                        "headers": ["Name", "Kapitalanteil", "4% Zinsen", "Restgewinn", "Gesamtgewinn"],
+                        "rows": [
+                            {"label": "Bauer", "values": ["100.000 €", "", "", ""]},
+                            {"label": "Müller", "values": ["150.000 €", "", "", ""]},
+                        ],
                     },
-                    {
-                        "id": "field_02",
-                        "label": "Projektbeschreibung",
-                        "field_type": "paragraph",
-                        "location": "Abschnitt 2",
-                        "current_value": "",
-                        "max_length": 500,
-                        "constraints": ["maximal halbe Seite"]
-                    }
+                    "data": {"gewinn": 130000, "zinssatz": 0.04},
+                    "external_url": "",
+                    "solvable": True,
+                    "skip_reason": "",
+                },
+                {
+                    "id": "uebung_1",
+                    "label": "Übung 1",
+                    "task_type": "external_link",
+                    "text": "Quiz auf lernnetz24.de",
+                    "context": "",
+                    "table_structure": None,
+                    "data": {},
+                    "external_url": "https://www.lernnetz24.de/bwl/hinweise/99.html",
+                    "solvable": False,
+                    "skip_reason": "Externer Link — Quiz muss im Browser bearbeitet werden",
+                },
+            ],
+        }
+    ),
+    "Aufgaben-Löser für Schulaufgaben": json.dumps(
+        {
+            "answer": "Bauer erhält 25.000 € Gesamtgewinn, Müller erhält 66.000 €",
+            "table_data": {
+                "headers": ["Name", "Kapitalanteil", "4% Zinsen", "Restgewinn", "Gesamtgewinn"],
+                "rows": [
+                    {"label": "Bauer", "values": ["100.000 €", "4.000 €", "56.000 €", "60.000 €"]},
+                    {"label": "Müller", "values": ["150.000 €", "6.000 €", "56.000 €", "62.000 €"]},
+                    {"label": "Summe", "values": ["250.000 €", "10.000 €", "112.000 €", "122.000 €"]},
                 ],
-                "extracted_info": {}
             },
-            {
-                "id": "doc_02",
-                "filename": "Anforderungen.txt",
-                "role": "source",
-                "reasoning": "Anforderungsliste",
-                "fields": None,
-                "extracted_info": {
-                    "requirements": ["Webbasierte Lagerverwaltung", "Login-System", "REST API"],
-                    "description": "Entwicklung einer Lagerverwaltung mit Flask"
+            "calculation_steps": [
+                "4% von 100.000 = 4.000 €",
+                "4% von 150.000 = 6.000 €",
+                "Restgewinn: 130.000 - 10.000 = 120.000 €",
+                "Pro Kopf: 120.000 / 2 = 60.000 €",
+            ],
+            "confidence": 0.95,
+        }
+    ),
+    # --- Document classification & template filling ---
+    "Dokument-Klassifikator": json.dumps(
+        {
+            "documents": [
+                {
+                    "id": "doc_01",
+                    "filename": "Projektantrag.docx",
+                    "role": "template",
+                    "reasoning": "Formular mit Leerfeldern",
+                    "fields": [
+                        {
+                            "id": "field_01",
+                            "label": "Projektbezeichnung",
+                            "field_type": "text",
+                            "location": "Zeile 3",
+                            "current_value": "",
+                            "max_length": 80,
+                            "constraints": ["einzeilig"],
+                        },
+                        {
+                            "id": "field_02",
+                            "label": "Projektbeschreibung",
+                            "field_type": "paragraph",
+                            "location": "Abschnitt 2",
+                            "current_value": "",
+                            "max_length": 500,
+                            "constraints": ["maximal halbe Seite"],
+                        },
+                    ],
+                    "extracted_info": {},
+                },
+                {
+                    "id": "doc_02",
+                    "filename": "Anforderungen.txt",
+                    "role": "source",
+                    "reasoning": "Anforderungsliste",
+                    "fields": None,
+                    "extracted_info": {
+                        "requirements": ["Webbasierte Lagerverwaltung", "Login-System", "REST API"],
+                        "description": "Entwicklung einer Lagerverwaltung mit Flask",
+                    },
+                },
+            ],
+            "contradictions": [
+                {
+                    "topic": "Datenbankwahl",
+                    "source_a": "Anforderungen.txt: SQLite",
+                    "source_b": "Mündlich: PostgreSQL",
+                    "recommendation": "SQLite (schriftlich dokumentiert)",
                 }
-            }
-        ],
-        "contradictions": [
-            {
-                "topic": "Datenbankwahl",
-                "source_a": "Anforderungen.txt: SQLite",
-                "source_b": "Mündlich: PostgreSQL",
-                "recommendation": "SQLite (schriftlich dokumentiert)"
-            }
-        ]
-    }),
-    "Template-Ausfüller": json.dumps({
-        "filled_fields": [
-            {
-                "field_id": "field_01",
-                "label": "Projektbezeichnung",
-                "value": "Webbasierte Lagerverwaltung mit Flask und SQLite",
-                "fits_constraint": True,
-                "char_count": 48
-            },
-            {
-                "field_id": "field_02",
-                "label": "Projektbeschreibung",
-                "value": "Entwicklung einer webbasierten Lagerverwaltung zur Verwaltung von Warenein- und -ausgängen.",
-                "fits_constraint": True,
-                "char_count": 91
-            }
-        ],
-        "warnings": ["Feld 'Zeitplan' hat nur 200 Zeichen"]
-    }),
-    "Anforderungs-Auditor": json.dumps({
-        "findings": [
-            {
-                "category": "gap",
-                "severity": "warning",
-                "title": "Abgabedatum nicht angegeben",
-                "detail": "Keines der Dokumente nennt ein Abgabedatum.",
-                "sources": ["Alle Dokumente"],
-                "quotes": [],
-                "recommendation": "Abgabedatum beim Lehrer erfragen"
-            },
-            {
-                "category": "ambiguity",
-                "severity": "info",
-                "title": "Datenbankwahl nicht eindeutig",
-                "detail": "Anforderungen erwähnen Datenbank ohne konkretes System.",
-                "sources": ["Anforderungen.txt"],
-                "quotes": ["muss Datenbank enthalten"],
-                "recommendation": "SQLite als Standard verwenden und dokumentieren"
-            }
-        ],
-        "missing_information": [
-            "Abgabedatum / Deadline",
-            "Bewertungskriterien / Notenschlüssel",
-            "Erlaubte Hilfsmittel"
-        ],
-        "completeness_assessment": {
-            "score": 0.4,
-            "reasoning": "Von 10 üblichen Pflichtangaben fehlen 6"
+            ],
         }
-    }),
-    "Anforderungs-Extraktor": json.dumps({
-        "requirements": [
-            {
-                "id": "REQ-001",
-                "text": "Webbasierte Lagerverwaltung erstellen",
-                "source": "Anforderungen.txt",
-                "category": "functional",
-                "status": "clear",
-                "priority": "must",
-                "quote": "Entwicklung einer webbasierten Lagerverwaltung"
-            },
-            {
-                "id": "REQ-002",
-                "text": "Login-System implementieren",
-                "source": "Anforderungen.txt",
-                "category": "functional",
-                "status": "clear",
-                "priority": "must",
-                "quote": "Login-System"
-            },
-            {
-                "id": "REQ-003",
-                "text": "Datenbank verwenden",
-                "source": "Anforderungen.txt",
-                "category": "constraint",
-                "status": "ambiguous",
-                "priority": "must",
-                "quote": "muss Datenbank enthalten"
-            }
-        ],
-        "implicit_requirements": [
-            {
-                "id": "IMP-001",
-                "text": "Dokumentation in deutscher Sprache",
-                "reasoning": "Deutschsprachiger Unterricht",
-                "confidence": 0.95
-            }
-        ],
-        "requirement_count": {
-            "total": 3,
-            "clear": 2,
-            "ambiguous": 1,
-            "contradicted": 0,
-            "gap": 0
+    ),
+    "Template-Ausfüller": json.dumps(
+        {
+            "filled_fields": [
+                {
+                    "field_id": "field_01",
+                    "label": "Projektbezeichnung",
+                    "value": "Webbasierte Lagerverwaltung mit Flask und SQLite",
+                    "fits_constraint": True,
+                    "char_count": 48,
+                },
+                {
+                    "field_id": "field_02",
+                    "label": "Projektbeschreibung",
+                    "value": "Entwicklung einer webbasierten Lagerverwaltung zur Verwaltung von Warenein- und -ausgängen.",
+                    "fits_constraint": True,
+                    "char_count": 91,
+                },
+            ],
+            "warnings": ["Feld 'Zeitplan' hat nur 200 Zeichen"],
         }
-    }),
-    "Entscheidungs-Assistent": json.dumps({
-        "amendments": [
-            {
-                "id": "AMD-001",
-                "resolves": "F-002",
-                "finding_title": "Widerspruch Datenbankwahl",
-                "decision": "SQLite wird verwendet",
-                "reasoning": "Schriftliche Vorgabe hat Vorrang. SQLite ist fuer den Projektumfang ausreichend.",
-                "source": "auto",
-                "alternatives_considered": [
-                    "PostgreSQL (muendlich empfohlen)",
-                    "MySQL (nicht erwaehnt)"
-                ]
-            }
-        ],
-        "unresolvable": [
-            {
-                "finding_id": "F-003",
-                "reason": "Abgabedatum muss beim Lehrer erfragt werden"
-            }
-        ]
-    }),
+    ),
+    "Anforderungs-Auditor": json.dumps(
+        {
+            "findings": [
+                {
+                    "category": "gap",
+                    "severity": "warning",
+                    "title": "Abgabedatum nicht angegeben",
+                    "detail": "Keines der Dokumente nennt ein Abgabedatum.",
+                    "sources": ["Alle Dokumente"],
+                    "quotes": [],
+                    "recommendation": "Abgabedatum beim Lehrer erfragen",
+                },
+                {
+                    "category": "ambiguity",
+                    "severity": "info",
+                    "title": "Datenbankwahl nicht eindeutig",
+                    "detail": "Anforderungen erwähnen Datenbank ohne konkretes System.",
+                    "sources": ["Anforderungen.txt"],
+                    "quotes": ["muss Datenbank enthalten"],
+                    "recommendation": "SQLite als Standard verwenden und dokumentieren",
+                },
+            ],
+            "missing_information": [
+                "Abgabedatum / Deadline",
+                "Bewertungskriterien / Notenschlüssel",
+                "Erlaubte Hilfsmittel",
+            ],
+            "completeness_assessment": {"score": 0.4, "reasoning": "Von 10 üblichen Pflichtangaben fehlen 6"},
+        }
+    ),
+    "Anforderungs-Extraktor": json.dumps(
+        {
+            "requirements": [
+                {
+                    "id": "REQ-001",
+                    "text": "Webbasierte Lagerverwaltung erstellen",
+                    "source": "Anforderungen.txt",
+                    "category": "functional",
+                    "status": "clear",
+                    "priority": "must",
+                    "quote": "Entwicklung einer webbasierten Lagerverwaltung",
+                },
+                {
+                    "id": "REQ-002",
+                    "text": "Login-System implementieren",
+                    "source": "Anforderungen.txt",
+                    "category": "functional",
+                    "status": "clear",
+                    "priority": "must",
+                    "quote": "Login-System",
+                },
+                {
+                    "id": "REQ-003",
+                    "text": "Datenbank verwenden",
+                    "source": "Anforderungen.txt",
+                    "category": "constraint",
+                    "status": "ambiguous",
+                    "priority": "must",
+                    "quote": "muss Datenbank enthalten",
+                },
+            ],
+            "implicit_requirements": [
+                {
+                    "id": "IMP-001",
+                    "text": "Dokumentation in deutscher Sprache",
+                    "reasoning": "Deutschsprachiger Unterricht",
+                    "confidence": 0.95,
+                }
+            ],
+            "requirement_count": {"total": 3, "clear": 2, "ambiguous": 1, "contradicted": 0, "gap": 0},
+        }
+    ),
+    "Entscheidungs-Assistent": json.dumps(
+        {
+            "amendments": [
+                {
+                    "id": "AMD-001",
+                    "resolves": "F-002",
+                    "finding_title": "Widerspruch Datenbankwahl",
+                    "decision": "SQLite wird verwendet",
+                    "reasoning": "Schriftliche Vorgabe hat Vorrang. SQLite ist fuer den Projektumfang ausreichend.",
+                    "source": "auto",
+                    "alternatives_considered": ["PostgreSQL (muendlich empfohlen)", "MySQL (nicht erwaehnt)"],
+                }
+            ],
+            "unresolvable": [{"finding_id": "F-003", "reason": "Abgabedatum muss beim Lehrer erfragt werden"}],
+        }
+    ),
     # --- Standard pipeline stages ---
-    "Aufgaben-Parser": json.dumps({
-        "task_text": "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit mindestens 8 Folien.",
-        "subject": "IT-Sicherheit",
-        "task_type": "presentation",
-        "constraints": {
-            "page_count": None, "slide_count": 8, "word_count": None,
-            "language": "de", "format": "pptx", "due_date": None,
-            "specific_requirements": ["mindestens 8 Folien"]
-        },
-        "raw_input_type": "text"
-    }),
-    "Planungsassistent": json.dumps({
-        "title": "IT-Sicherheit im Unternehmen",
-        "artifact_type": "pptx",
-        "sections": [
-            {"id": "section_01", "title": "IT-Sicherheit im Unternehmen", "purpose": "Titelfolie",
-             "research_queries": [], "estimated_length": "short"},
-            {"id": "section_02", "title": "Was ist IT-Sicherheit?", "purpose": "Definition",
-             "research_queries": ["IT-Sicherheit Definition"], "estimated_length": "medium"},
-            {"id": "section_03", "title": "Bedrohungen", "purpose": "Angriffsvektoren",
-             "research_queries": ["Cyberangriffe"], "estimated_length": "medium"},
-            {"id": "section_04", "title": "Schutzmaßnahmen", "purpose": "Maßnahmen",
-             "research_queries": ["IT-Sicherheit Maßnahmen"], "estimated_length": "medium"},
-            {"id": "section_05", "title": "Quellen", "purpose": "Quellenangaben",
-             "research_queries": [], "estimated_length": "short"},
-        ],
-        "style_notes": "Sachlich"
-    }),
-    "Recherche-Assistent": json.dumps({
-        "sections": [
-            {"section_id": "section_01", "findings": [
-                {"content": "Titelfolie", "source": "llm_knowledge", "relevance": 1.0}
-            ], "sufficient": True},
-            {"section_id": "section_02", "findings": [
-                {"content": "IT-Sicherheit schützt Informationen und Systeme.", "source": "llm_knowledge", "relevance": 0.95},
-                {"content": "CIA-Triad: Vertraulichkeit, Integrität, Verfügbarkeit.", "source": "llm_knowledge", "relevance": 0.95},
-            ], "sufficient": True},
-            {"section_id": "section_03", "findings": [
-                {"content": "Phishing ist die häufigste Angriffsmethode.", "source": "llm_knowledge", "relevance": 0.9},
-            ], "sufficient": True},
-            {"section_id": "section_04", "findings": [
-                {"content": "Firewalls, VPN, Verschlüsselung, Updates, Backups.", "source": "llm_knowledge", "relevance": 0.9},
-            ], "sufficient": True},
-            {"section_id": "section_05", "findings": [
-                {"content": "Quellenfolie", "source": "llm_knowledge", "relevance": 1.0}
-            ], "sufficient": True},
-        ]
-    }),
-    "Präsentations-Autor": json.dumps({
-        "title": "IT-Sicherheit im Unternehmen",
-        "sections": [
-            {"section_id": "section_01", "heading": "IT-Sicherheit im Unternehmen",
-             "content": "Grundlagen, Bedrohungen und Schutzmaßnahmen",
-             "bullet_points": [], "speaker_notes": None},
-            {"section_id": "section_02", "heading": "Was ist IT-Sicherheit?",
-             "content": "Schutz von Informationen und IT-Systemen.",
-             "bullet_points": ["CIA-Triad: Vertraulichkeit, Integrität, Verfügbarkeit", "Gesetzliche Grundlage: BSI-Gesetz, DSGVO", "Schutz vor unbefugtem Zugriff"],
-             "speaker_notes": "Die drei Schutzziele bilden die Basis."},
-            {"section_id": "section_03", "heading": "Bedrohungen",
-             "content": "Cyberangriffe nehmen zu.",
-             "bullet_points": ["Phishing — häufigste Methode", "Ransomware — Erpressung", "Social Engineering"],
-             "speaker_notes": "80% beginnen mit Phishing."},
-            {"section_id": "section_04", "heading": "Schutzmaßnahmen",
-             "content": "Technische und organisatorische Maßnahmen.",
-             "bullet_points": ["Firewalls und VPN", "Regelmäßige Updates und Backups", "Mitarbeiterschulungen"],
-             "speaker_notes": "Technik allein reicht nicht."},
-            {"section_id": "section_05", "heading": "Quellen",
-             "content": "",
-             "bullet_points": ["BSI", "OWASP Top 10"],
-             "speaker_notes": None},
-        ],
-        "sources": ["BSI", "OWASP Top 10"]
-    }),
-    "Dokument-Autor": json.dumps({
-        "title": "IT-Sicherheit",
-        "sections": [
-            {"section_id": "section_01", "heading": "Einleitung",
-             "content": "IT-Sicherheit ist ein zentrales Thema der modernen Informationstechnologie.",
-             "bullet_points": [], "speaker_notes": None},
-        ],
-        "sources": []
-    }),
-    "Aufgaben-Löser": json.dumps({
-        "title": "IT-Sicherheit Fragen",
-        "sections": [
-            {"section_id": "section_01", "heading": "Was ist IT-Sicherheit?",
-             "content": "IT-Sicherheit umfasst den Schutz von Informationen und IT-Systemen vor unbefugtem Zugriff.",
-             "bullet_points": [], "speaker_notes": None},
-        ],
-        "sources": []
-    }),
+    "Aufgaben-Parser": json.dumps(
+        {
+            "task_text": "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit mindestens 8 Folien.",
+            "subject": "IT-Sicherheit",
+            "task_type": "presentation",
+            "constraints": {
+                "page_count": None,
+                "slide_count": 8,
+                "word_count": None,
+                "language": "de",
+                "format": "pptx",
+                "due_date": None,
+                "specific_requirements": ["mindestens 8 Folien"],
+            },
+            "raw_input_type": "text",
+        }
+    ),
+    "Planungsassistent": json.dumps(
+        {
+            "title": "IT-Sicherheit im Unternehmen",
+            "artifact_type": "pptx",
+            "sections": [
+                {
+                    "id": "section_01",
+                    "title": "IT-Sicherheit im Unternehmen",
+                    "purpose": "Titelfolie",
+                    "research_queries": [],
+                    "estimated_length": "short",
+                },
+                {
+                    "id": "section_02",
+                    "title": "Was ist IT-Sicherheit?",
+                    "purpose": "Definition",
+                    "research_queries": ["IT-Sicherheit Definition"],
+                    "estimated_length": "medium",
+                },
+                {
+                    "id": "section_03",
+                    "title": "Bedrohungen",
+                    "purpose": "Angriffsvektoren",
+                    "research_queries": ["Cyberangriffe"],
+                    "estimated_length": "medium",
+                },
+                {
+                    "id": "section_04",
+                    "title": "Schutzmaßnahmen",
+                    "purpose": "Maßnahmen",
+                    "research_queries": ["IT-Sicherheit Maßnahmen"],
+                    "estimated_length": "medium",
+                },
+                {
+                    "id": "section_05",
+                    "title": "Quellen",
+                    "purpose": "Quellenangaben",
+                    "research_queries": [],
+                    "estimated_length": "short",
+                },
+            ],
+            "style_notes": "Sachlich",
+        }
+    ),
+    "Recherche-Assistent": json.dumps(
+        {
+            "sections": [
+                {
+                    "section_id": "section_01",
+                    "findings": [{"content": "Titelfolie", "source": "llm_knowledge", "relevance": 1.0}],
+                    "sufficient": True,
+                },
+                {
+                    "section_id": "section_02",
+                    "findings": [
+                        {
+                            "content": "IT-Sicherheit schützt Informationen und Systeme.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.95,
+                        },
+                        {
+                            "content": "CIA-Triad: Vertraulichkeit, Integrität, Verfügbarkeit.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.95,
+                        },
+                    ],
+                    "sufficient": True,
+                },
+                {
+                    "section_id": "section_03",
+                    "findings": [
+                        {
+                            "content": "Phishing ist die häufigste Angriffsmethode.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.9,
+                        },
+                    ],
+                    "sufficient": True,
+                },
+                {
+                    "section_id": "section_04",
+                    "findings": [
+                        {
+                            "content": "Firewalls, VPN, Verschlüsselung, Updates, Backups.",
+                            "source": "llm_knowledge",
+                            "relevance": 0.9,
+                        },
+                    ],
+                    "sufficient": True,
+                },
+                {
+                    "section_id": "section_05",
+                    "findings": [{"content": "Quellenfolie", "source": "llm_knowledge", "relevance": 1.0}],
+                    "sufficient": True,
+                },
+            ]
+        }
+    ),
+    "Präsentations-Autor": json.dumps(
+        {
+            "title": "IT-Sicherheit im Unternehmen",
+            "sections": [
+                {
+                    "section_id": "section_01",
+                    "heading": "IT-Sicherheit im Unternehmen",
+                    "content": "Grundlagen, Bedrohungen und Schutzmaßnahmen",
+                    "bullet_points": [],
+                    "speaker_notes": None,
+                },
+                {
+                    "section_id": "section_02",
+                    "heading": "Was ist IT-Sicherheit?",
+                    "content": "Schutz von Informationen und IT-Systemen.",
+                    "bullet_points": [
+                        "CIA-Triad: Vertraulichkeit, Integrität, Verfügbarkeit",
+                        "Gesetzliche Grundlage: BSI-Gesetz, DSGVO",
+                        "Schutz vor unbefugtem Zugriff",
+                    ],
+                    "speaker_notes": "Die drei Schutzziele bilden die Basis.",
+                },
+                {
+                    "section_id": "section_03",
+                    "heading": "Bedrohungen",
+                    "content": "Cyberangriffe nehmen zu.",
+                    "bullet_points": ["Phishing — häufigste Methode", "Ransomware — Erpressung", "Social Engineering"],
+                    "speaker_notes": "80% beginnen mit Phishing.",
+                },
+                {
+                    "section_id": "section_04",
+                    "heading": "Schutzmaßnahmen",
+                    "content": "Technische und organisatorische Maßnahmen.",
+                    "bullet_points": ["Firewalls und VPN", "Regelmäßige Updates und Backups", "Mitarbeiterschulungen"],
+                    "speaker_notes": "Technik allein reicht nicht.",
+                },
+                {
+                    "section_id": "section_05",
+                    "heading": "Quellen",
+                    "content": "",
+                    "bullet_points": ["BSI", "OWASP Top 10"],
+                    "speaker_notes": None,
+                },
+            ],
+            "sources": ["BSI", "OWASP Top 10"],
+        }
+    ),
+    "Dokument-Autor": json.dumps(
+        {
+            "title": "IT-Sicherheit",
+            "sections": [
+                {
+                    "section_id": "section_01",
+                    "heading": "Einleitung",
+                    "content": "IT-Sicherheit ist ein zentrales Thema der modernen Informationstechnologie.",
+                    "bullet_points": [],
+                    "speaker_notes": None,
+                },
+            ],
+            "sources": [],
+        }
+    ),
+    "Aufgaben-Löser": json.dumps(
+        {
+            "title": "IT-Sicherheit Fragen",
+            "sections": [
+                {
+                    "section_id": "section_01",
+                    "heading": "Was ist IT-Sicherheit?",
+                    "content": "IT-Sicherheit umfasst den Schutz von Informationen und IT-Systemen vor unbefugtem Zugriff.",
+                    "bullet_points": [],
+                    "speaker_notes": None,
+                },
+            ],
+            "sources": [],
+        }
+    ),
     "Code-Generator": 'def main():\n    print("Hello World")\n\nif __name__ == "__main__":\n    main()\n',
 }
 
@@ -371,7 +469,24 @@ def make_mock_router():
 
     config = PipelineConfig(
         backends={"mock": BackendConfig(name="mock", api_key="test", enabled=True)},
-        cascade={stage: ["mock"] for stage in ["intake", "plan", "research", "synthesize", "artifact", "agent_codegen", "decompose", "solve", "classify_docs", "fill_template", "audit", "classify_report", "amendments"]},
+        cascade={
+            stage: ["mock"]
+            for stage in [
+                "intake",
+                "plan",
+                "research",
+                "synthesize",
+                "artifact",
+                "agent_codegen",
+                "decompose",
+                "solve",
+                "classify_docs",
+                "fill_template",
+                "audit",
+                "classify_report",
+                "amendments",
+            ]
+        },
         research=ResearchConfig(enabled=False, use_web=False),
         output=OutputConfig(dir=tempfile.mkdtemp(), default_format="pptx", language="de"),
     )
@@ -386,6 +501,7 @@ def make_mock_router():
 
 
 # === Tests ===
+
 
 class TestConfig(unittest.TestCase):
     def test_load_empty_config(self):
@@ -420,9 +536,7 @@ class TestConfig(unittest.TestCase):
 class TestRouter(unittest.TestCase):
     def test_router_completes(self):
         config, router = make_mock_router()
-        result = asyncio.run(
-            router.complete(stage="plan", messages=[{"role": "user", "content": "test"}])
-        )
+        result = asyncio.run(router.complete(stage="plan", messages=[{"role": "user", "content": "test"}]))
         self.assertEqual(result.backend_name, "mock")
 
     def test_router_stats(self):
@@ -438,10 +552,13 @@ class TestIntakeStage(unittest.TestCase):
 
         config, router = make_mock_router()
         stage = IntakeStage()
-        result = asyncio.run(stage.run(
-            {"raw_input": "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit"},
-            router, config,
-        ))
+        result = asyncio.run(
+            stage.run(
+                {"raw_input": "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit"},
+                router,
+                config,
+            )
+        )
         self.assertTrue(result.success, f"Intake failed: {result.errors}")
         self.assertEqual(result.data["task_type"], "presentation")
         self.assertEqual(result.data["constraints"]["format"], "pptx")
@@ -457,8 +574,7 @@ class TestPlanStage(unittest.TestCase):
                 "task_text": "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit",
                 "subject": "IT-Sicherheit",
                 "task_type": "presentation",
-                "constraints": {"language": "de", "format": "pptx", "slide_count": 8,
-                                "specific_requirements": []},
+                "constraints": {"language": "de", "format": "pptx", "slide_count": 8, "specific_requirements": []},
             }
         }
         stage = PlanStage()
@@ -516,9 +632,7 @@ class TestFullPipeline(unittest.TestCase):
 
         config, router = make_mock_router()
         pipeline = Pipeline(config, router)
-        result = asyncio.run(pipeline.run(
-            "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit 8 Folien."
-        ))
+        result = asyncio.run(pipeline.run("Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit 8 Folien."))
 
         self.assertTrue(result.success, f"Failed at {result.failed_stage}: {result.validation_errors}")
         self.assertIsNotNone(result.output_path)
@@ -534,9 +648,7 @@ class TestFullPipeline(unittest.TestCase):
         config, router = make_mock_router()
         preset = resolve_quick("fiae-praesi-itsec")
         pipeline = Pipeline(config, router)
-        result = asyncio.run(pipeline.run(
-            "IT-Sicherheit im Unternehmen", preset=preset
-        ))
+        result = asyncio.run(pipeline.run("IT-Sicherheit im Unternehmen", preset=preset))
 
         self.assertTrue(result.success, f"Failed at {result.failed_stage}: {result.validation_errors}")
         self.assertTrue(result.output_path.endswith(".pptx"))
@@ -559,6 +671,7 @@ class TestFullPipeline(unittest.TestCase):
 
         async def bad_complete(*args, **kwargs):
             return LLMResponse(content="not json!!!", model="mock", backend_name="mock")
+
         mock.complete = bad_complete
 
         pipeline = Pipeline(config, router)
@@ -571,6 +684,7 @@ class TestFullPipeline(unittest.TestCase):
 class TestPresets(unittest.TestCase):
     def test_resolve_quick_preset(self):
         from schulpipeline.presets import resolve_quick
+
         preset = resolve_quick("fiae-praesi-itsec")
         self.assertEqual(preset.output_format, "pptx")
         self.assertEqual(preset.subject_key, "it_sicherheit")
@@ -580,6 +694,7 @@ class TestPresets(unittest.TestCase):
 
     def test_resolve_manual_preset(self):
         from schulpipeline.presets import resolve_preset
+
         preset = resolve_preset("ausarbeitung", "wirtschaft")
         self.assertEqual(preset.output_format, "docx")
         self.assertEqual(preset.subject_key, "wirtschaft")
@@ -588,43 +703,51 @@ class TestPresets(unittest.TestCase):
 
     def test_resolve_with_overrides(self):
         from schulpipeline.presets import resolve_quick
+
         preset = resolve_quick("fiae-praesi-itsec", overrides={"section_count": 15})
         self.assertEqual(preset.section_count, 15)
 
     def test_unknown_preset_raises(self):
         from schulpipeline.presets import resolve_quick
+
         with self.assertRaises(ValueError):
             resolve_quick("nonexistent-preset")
 
     def test_unknown_output_type_raises(self):
         from schulpipeline.presets import resolve_preset
+
         with self.assertRaises(ValueError):
             resolve_preset("nonexistent", "it_sicherheit")
 
     def test_unknown_subject_raises(self):
         from schulpipeline.presets import resolve_preset
+
         with self.assertRaises(ValueError):
             resolve_preset("praesentation", "nonexistent")
 
     def test_system_context_contains_domain(self):
         from schulpipeline.presets import resolve_quick
+
         preset = resolve_quick("fiae-praesi-netzwerk")
         self.assertIn("OSI-Modell", preset.system_context)
         self.assertIn("TCP/IP", preset.system_context)
 
     def test_quality_instructions_for_presentation(self):
         from schulpipeline.presets import resolve_quick
+
         preset = resolve_quick("fiae-praesi-itsec")
         self.assertIn("Stichpunkte", preset.quality_instructions)
         self.assertIn("Speaker Notes", preset.quality_instructions)
 
     def test_quality_instructions_for_aufgaben(self):
         from schulpipeline.presets import resolve_quick
+
         preset = resolve_quick("fiae-aufgaben-prog")
         self.assertIn("Direkte Antworten", preset.quality_instructions)
 
     def test_list_presets(self):
         from schulpipeline.presets import list_presets
+
         data = list_presets()
         self.assertIn("output_types", data)
         self.assertIn("subjects", data)
@@ -635,13 +758,18 @@ class TestPresets(unittest.TestCase):
     def test_all_quick_presets_resolve(self):
         """Every quick preset must resolve without errors."""
         from schulpipeline.presets import QUICK_PRESETS, resolve_quick
+
         for key in QUICK_PRESETS:
             preset = resolve_quick(key)
             self.assertIsNotNone(preset.system_context)
-            self.assertIn(preset.output_format, ("pptx", "docx", "md", "project", "worksheet", "template_fill", "audit", "requirements_report"))
+            self.assertIn(
+                preset.output_format,
+                ("pptx", "docx", "md", "project", "worksheet", "template_fill", "audit", "requirements_report"),
+            )
 
     def test_english_subject_sets_language(self):
         from schulpipeline.presets import resolve_preset
+
         preset = resolve_preset("aufgaben", "englisch")
         self.assertEqual(preset.language, "en")
 
@@ -652,10 +780,12 @@ class TestSession(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_create_and_load_session(self):
         from schulpipeline.session import SessionStore
+
         store = SessionStore(sessions_dir=os.path.join(self.tmpdir, "sessions"))
 
         session = store.create(
@@ -675,6 +805,7 @@ class TestSession(unittest.TestCase):
 
     def test_session_list_and_filter(self):
         from schulpipeline.session import SessionStore
+
         store = SessionStore(sessions_dir=os.path.join(self.tmpdir, "sessions"))
 
         s1 = store.create(task_input="Task 1", subject="it_sicherheit")
@@ -694,6 +825,7 @@ class TestSession(unittest.TestCase):
 
     def test_session_delete(self):
         from schulpipeline.session import SessionStore
+
         store = SessionStore(sessions_dir=os.path.join(self.tmpdir, "sessions"))
 
         session = store.create(task_input="Delete me")
@@ -703,32 +835,50 @@ class TestSession(unittest.TestCase):
 
     def test_session_display_title(self):
         from schulpipeline.session import Session, StageSnapshot
+
         session = Session(
-            id="test1234", created_at="", updated_at="",
+            id="test1234",
+            created_at="",
+            updated_at="",
             task_input="A very long task that should be truncated to sixty characters at most ok",
             input_type="text",
         )
         self.assertEqual(len(session.display_title), 60)
 
         # With plan data, title comes from plan
-        session.completed_stages.append(StageSnapshot(
-            name="plan", success=True,
-            data={"title": "IT-Sicherheit im Unternehmen"},
-            errors=[], elapsed_ms=0, backend_used="", completed_at="",
-        ))
+        session.completed_stages.append(
+            StageSnapshot(
+                name="plan",
+                success=True,
+                data={"title": "IT-Sicherheit im Unternehmen"},
+                errors=[],
+                elapsed_ms=0,
+                backend_used="",
+                completed_at="",
+            )
+        )
         self.assertEqual(session.display_title, "IT-Sicherheit im Unternehmen")
 
     def test_session_stage_data(self):
         from schulpipeline.session import Session, StageSnapshot
+
         session = Session(id="t", created_at="", updated_at="", task_input="x", input_type="text")
-        session.completed_stages.append(StageSnapshot(
-            name="intake", success=True, data={"task_text": "hello"},
-            errors=[], elapsed_ms=100, backend_used="mock", completed_at="",
-        ))
+        session.completed_stages.append(
+            StageSnapshot(
+                name="intake",
+                success=True,
+                data={"task_text": "hello"},
+                errors=[],
+                elapsed_ms=100,
+                backend_used="mock",
+                completed_at="",
+            )
+        )
         self.assertEqual(session.stage_data["intake"]["task_text"], "hello")
 
     def test_session_is_resumable(self):
         from schulpipeline.session import Session
+
         s = Session(id="t", created_at="", updated_at="", task_input="x", input_type="text")
         s.status = "completed"
         self.assertFalse(s.is_resumable)
@@ -774,12 +924,24 @@ class TestSession(unittest.TestCase):
         # Create a session that already has intake + plan done
         session = store.create(task_input="Test resume")
         session.completed_stages = [
-            StageSnapshot(name="intake", success=True,
+            StageSnapshot(
+                name="intake",
+                success=True,
                 data=json.loads(DEFAULT_RESPONSES["Aufgaben-Parser"]),
-                errors=[], elapsed_ms=100, backend_used="mock", completed_at=""),
-            StageSnapshot(name="plan", success=True,
+                errors=[],
+                elapsed_ms=100,
+                backend_used="mock",
+                completed_at="",
+            ),
+            StageSnapshot(
+                name="plan",
+                success=True,
                 data=json.loads(DEFAULT_RESPONSES["Planungsassistent"]),
-                errors=[], elapsed_ms=100, backend_used="mock", completed_at=""),
+                errors=[],
+                elapsed_ms=100,
+                backend_used="mock",
+                completed_at="",
+            ),
         ]
         session.status = "failed"
         session.failed_stage = "research"
@@ -805,15 +967,33 @@ class TestSession(unittest.TestCase):
         # Session with all stages done
         session = store.create(task_input="Test retry")
         session.completed_stages = [
-            StageSnapshot(name="intake", success=True,
+            StageSnapshot(
+                name="intake",
+                success=True,
                 data=json.loads(DEFAULT_RESPONSES["Aufgaben-Parser"]),
-                errors=[], elapsed_ms=100, backend_used="mock", completed_at=""),
-            StageSnapshot(name="plan", success=True,
+                errors=[],
+                elapsed_ms=100,
+                backend_used="mock",
+                completed_at="",
+            ),
+            StageSnapshot(
+                name="plan",
+                success=True,
                 data=json.loads(DEFAULT_RESPONSES["Planungsassistent"]),
-                errors=[], elapsed_ms=100, backend_used="mock", completed_at=""),
-            StageSnapshot(name="research", success=True,
+                errors=[],
+                elapsed_ms=100,
+                backend_used="mock",
+                completed_at="",
+            ),
+            StageSnapshot(
+                name="research",
+                success=True,
                 data=json.loads(DEFAULT_RESPONSES["Recherche-Assistent"]),
-                errors=[], elapsed_ms=100, backend_used="mock", completed_at=""),
+                errors=[],
+                elapsed_ms=100,
+                backend_used="mock",
+                completed_at="",
+            ),
         ]
         session.status = "completed"
         store.save(session)
@@ -831,6 +1011,7 @@ class TestAgents(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_build_project_spec(self):
@@ -839,12 +1020,20 @@ class TestAgents(unittest.TestCase):
         synthesis = {
             "title": "Lagerverwaltung",
             "sections": [
-                {"section_id": "s1", "heading": "Datenbankmodell",
-                 "content": "SQLite Datenbank mit Tabellen für Produkte und Bestellungen",
-                 "bullet_points": ["create_product()", "get_all_products()"], "speaker_notes": None},
-                {"section_id": "s2", "heading": "REST API",
-                 "content": "Flask-basierte API mit CRUD Endpunkten",
-                 "bullet_points": ["GET /products", "POST /products"], "speaker_notes": None},
+                {
+                    "section_id": "s1",
+                    "heading": "Datenbankmodell",
+                    "content": "SQLite Datenbank mit Tabellen für Produkte und Bestellungen",
+                    "bullet_points": ["create_product()", "get_all_products()"],
+                    "speaker_notes": None,
+                },
+                {
+                    "section_id": "s2",
+                    "heading": "REST API",
+                    "content": "Flask-basierte API mit CRUD Endpunkten",
+                    "bullet_points": ["GET /products", "POST /products"],
+                    "speaker_notes": None,
+                },
             ],
             "sources": [],
         }
@@ -868,9 +1057,13 @@ class TestAgents(unittest.TestCase):
             language="python",
             framework="flask",
             modules=[
-                ModuleSpec(name="API", purpose="REST endpoints", files=[
-                    FileSpec(path="src/api.py", description="Endpoints", key_functions=["get_items"]),
-                ]),
+                ModuleSpec(
+                    name="API",
+                    purpose="REST endpoints",
+                    files=[
+                        FileSpec(path="src/api.py", description="Endpoints", key_functions=["get_items"]),
+                    ],
+                ),
             ],
             dependencies=["flask"],
             requirements=["include tests"],
@@ -898,9 +1091,13 @@ class TestAgents(unittest.TestCase):
             description="A test project",
             language="python",
             modules=[
-                ModuleSpec(name="main", purpose="Entry point", files=[
-                    FileSpec(path="src/main.py", description="Main module", key_functions=["main"]),
-                ]),
+                ModuleSpec(
+                    name="main",
+                    purpose="Entry point",
+                    files=[
+                        FileSpec(path="src/main.py", description="Main module", key_functions=["main"]),
+                    ],
+                ),
             ],
         )
 
@@ -916,6 +1113,7 @@ class TestAgents(unittest.TestCase):
 
     def test_detect_language(self):
         from schulpipeline.agents import _detect_language
+
         self.assertEqual(_detect_language("erstelle eine flask webapp"), "python")
         self.assertEqual(_detect_language("react single page application"), "javascript")
         self.assertEqual(_detect_language("spring boot microservice"), "java")
@@ -1057,6 +1255,7 @@ class TestWorksheet(unittest.TestCase):
 
             # Verify it's a valid docx
             from docx import Document
+
             doc = Document(path)
             text = "\n".join(p.text for p in doc.paragraphs)
             self.assertIn("Testblatt", text)
@@ -1568,6 +1767,7 @@ class TestAudit(unittest.TestCase):
             self.assertTrue(Path(path).exists())
 
             from docx import Document
+
             doc = Document(path)
             text = "\n".join(p.text for p in doc.paragraphs)
             self.assertIn("Test-Audit", text)
@@ -1636,7 +1836,7 @@ class TestRequirements(unittest.TestCase):
         audit_result = json.loads(DEFAULT_RESPONSES["Anforderungs-Auditor"])
         # Add findings with IDs
         for i, f in enumerate(audit_result.get("findings", [])):
-            f["id"] = f"F-{i+1:03d}"
+            f["id"] = f"F-{i + 1:03d}"
 
         context = {
             "classify_docs": classify_result,
@@ -1660,14 +1860,25 @@ class TestRequirements(unittest.TestCase):
 
         audit_result = {
             "findings": [
-                {"id": "F-001", "severity": "warning", "title": "Test finding",
-                 "detail": "Test", "category": "contradiction"},
+                {
+                    "id": "F-001",
+                    "severity": "warning",
+                    "title": "Test finding",
+                    "detail": "Test",
+                    "category": "contradiction",
+                },
             ],
         }
         classify_report = {
             "requirements": [
-                {"id": "REQ-001", "text": "Test req", "source": "test.txt",
-                 "category": "functional", "status": "clear", "priority": "must"},
+                {
+                    "id": "REQ-001",
+                    "text": "Test req",
+                    "source": "test.txt",
+                    "category": "functional",
+                    "status": "clear",
+                    "priority": "must",
+                },
             ],
         }
 
@@ -1749,25 +1960,50 @@ class TestRequirements(unittest.TestCase):
 
         classify_report = {
             "requirements": [
-                {"id": "REQ-001", "text": "Login-System", "source": "Anf.txt",
-                 "category": "functional", "status": "clear", "priority": "must", "quote": "Login"},
+                {
+                    "id": "REQ-001",
+                    "text": "Login-System",
+                    "source": "Anf.txt",
+                    "category": "functional",
+                    "status": "clear",
+                    "priority": "must",
+                    "quote": "Login",
+                },
             ],
             "implicit_requirements": [],
             "requirement_count": {"total": 1, "clear": 1, "ambiguous": 0, "contradicted": 0, "gap": 0},
         }
         audit = {
             "findings": [
-                {"id": "F-001", "category": "impossibility", "severity": "blocker",
-                 "title": "Seitenconstraint", "detail": "Zu viel fuer 1 Seite", "sources": ["X"]},
+                {
+                    "id": "F-001",
+                    "category": "impossibility",
+                    "severity": "blocker",
+                    "title": "Seitenconstraint",
+                    "detail": "Zu viel fuer 1 Seite",
+                    "sources": ["X"],
+                },
             ],
-            "summary": {"total_findings": 1, "blockers": 1, "warnings": 0, "info": 0,
-                         "completeness_score": 0.4, "feasibility_score": 0.7,
-                         "verdict": "Vorgaben unvollstaendig"},
+            "summary": {
+                "total_findings": 1,
+                "blockers": 1,
+                "warnings": 0,
+                "info": 0,
+                "completeness_score": 0.4,
+                "feasibility_score": 0.7,
+                "verdict": "Vorgaben unvollstaendig",
+            },
         }
         amendments = {
             "amendments": [
-                {"id": "AMD-001", "resolves": "F-001", "decision": "2 Seiten",
-                 "reasoning": "Mathe", "source": "auto", "alternatives_considered": []},
+                {
+                    "id": "AMD-001",
+                    "resolves": "F-001",
+                    "decision": "2 Seiten",
+                    "reasoning": "Mathe",
+                    "source": "auto",
+                    "alternatives_considered": [],
+                },
             ],
             "unresolvable": [],
         }
@@ -1785,13 +2021,33 @@ class TestRequirements(unittest.TestCase):
         from schulpipeline.requirements import build_full_report, format_report_as_md
 
         report = build_full_report(
-            {"requirements": [{"id": "REQ-001", "text": "Test", "source": "X",
-                               "category": "functional", "status": "clear", "priority": "must",
-                               "quote": "test quote"}],
-             "implicit_requirements": [], "requirement_count": {"total": 1, "clear": 1}},
-            {"findings": [], "summary": {"verdict": "OK", "completeness_score": 1.0,
-                                          "feasibility_score": 1.0, "total_findings": 0,
-                                          "blockers": 0, "warnings": 0, "info": 0}},
+            {
+                "requirements": [
+                    {
+                        "id": "REQ-001",
+                        "text": "Test",
+                        "source": "X",
+                        "category": "functional",
+                        "status": "clear",
+                        "priority": "must",
+                        "quote": "test quote",
+                    }
+                ],
+                "implicit_requirements": [],
+                "requirement_count": {"total": 1, "clear": 1},
+            },
+            {
+                "findings": [],
+                "summary": {
+                    "verdict": "OK",
+                    "completeness_score": 1.0,
+                    "feasibility_score": 1.0,
+                    "total_findings": 0,
+                    "blockers": 0,
+                    "warnings": 0,
+                    "info": 0,
+                },
+            },
             {"amendments": [], "unresolvable": []},
         )
 
@@ -1807,12 +2063,22 @@ class TestRequirements(unittest.TestCase):
         from schulpipeline.requirements import build_full_report, format_report_as_docx
 
         report = build_full_report(
-            {"requirements": [{"id": "REQ-001", "text": "Test", "source": "X",
-                               "category": "functional", "status": "clear", "priority": "must",
-                               "quote": "original"}],
-             "implicit_requirements": [], "requirement_count": {}},
-            {"findings": [], "summary": {"verdict": "OK", "completeness_score": 1.0,
-                                          "feasibility_score": 1.0}},
+            {
+                "requirements": [
+                    {
+                        "id": "REQ-001",
+                        "text": "Test",
+                        "source": "X",
+                        "category": "functional",
+                        "status": "clear",
+                        "priority": "must",
+                        "quote": "original",
+                    }
+                ],
+                "implicit_requirements": [],
+                "requirement_count": {},
+            },
+            {"findings": [], "summary": {"verdict": "OK", "completeness_score": 1.0, "feasibility_score": 1.0}},
             {"amendments": [], "unresolvable": []},
         )
 
@@ -1822,6 +2088,7 @@ class TestRequirements(unittest.TestCase):
             format_report_as_docx(report, path)
             self.assertTrue(Path(path).exists())
             from docx import Document
+
             doc = Document(path)
             text = "\n".join(p.text for p in doc.paragraphs)
             self.assertIn("Anforderungsdokumentation", text)
@@ -1845,9 +2112,7 @@ class TestRequirements(unittest.TestCase):
         pipeline = Pipeline(config, router)
         stages = pipeline._select_stages({"preset": preset})
         stage_names = [s.name for s in stages]
-        self.assertEqual(stage_names, [
-            "intake", "classify_docs", "audit", "classify_report", "amendments"
-        ])
+        self.assertEqual(stage_names, ["intake", "classify_docs", "audit", "classify_report", "amendments"])
 
     def test_cross_reference(self):
         """Requirements are cross-referenced with audit findings."""
@@ -1858,8 +2123,11 @@ class TestRequirements(unittest.TestCase):
             {"id": "REQ-002", "text": "Login-System implementieren"},
         ]
         findings = [
-            {"id": "F-001", "title": "Widerspruch Datenbank SQLite vs PostgreSQL",
-             "detail": "SQLite in Anforderungen, PostgreSQL muendlich"},
+            {
+                "id": "F-001",
+                "title": "Widerspruch Datenbank SQLite vs PostgreSQL",
+                "detail": "SQLite in Anforderungen, PostgreSQL muendlich",
+            },
         ]
 
         result = _cross_reference(requirements, findings)
@@ -1875,6 +2143,7 @@ class TestFeedback(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_save_and_load_record(self):
@@ -1911,10 +2180,17 @@ class TestFeedback(unittest.TestCase):
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
         record = FeedbackRecord(
-            run_id="test-002", timestamp="2026-01-01T00:00:00Z",
-            pipeline_flow="presentation", preset_key="test", subject="test",
-            output_format="pptx", total_stages=5, failed_stages=0,
-            total_cost_usd=0.0, elapsed_ms=2000, backends_used=[],
+            run_id="test-002",
+            timestamp="2026-01-01T00:00:00Z",
+            pipeline_flow="presentation",
+            preset_key="test",
+            subject="test",
+            output_format="pptx",
+            total_stages=5,
+            failed_stages=0,
+            total_cost_usd=0.0,
+            elapsed_ms=2000,
+            backends_used=[],
             grade_received="pending",
         )
         store.save_record(record)
@@ -1935,11 +2211,16 @@ class TestFeedback(unittest.TestCase):
 
         for i in range(5):
             record = FeedbackRecord(
-                run_id=f"test-{i:03d}", timestamp="2026-01-01T00:00:00Z",
+                run_id=f"test-{i:03d}",
+                timestamp="2026-01-01T00:00:00Z",
                 pipeline_flow="worksheet" if i < 3 else "presentation",
-                preset_key="test", subject="wirtschaft" if i < 3 else "informatik",
-                output_format="worksheet", total_stages=3, failed_stages=0,
-                total_cost_usd=0.0, elapsed_ms=1000 + i * 100,
+                preset_key="test",
+                subject="wirtschaft" if i < 3 else "informatik",
+                output_format="worksheet",
+                total_stages=3,
+                failed_stages=0,
+                total_cost_usd=0.0,
+                elapsed_ms=1000 + i * 100,
                 backends_used=["groq"],
                 quality_rating=3 + (i % 3),  # 3, 4, 5, 3, 4
                 estimated_time_saved_min=20 + i * 5,
@@ -1961,12 +2242,21 @@ class TestFeedback(unittest.TestCase):
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
         for i in range(3):
-            store.save_record(FeedbackRecord(
-                run_id=f"del-{i}", timestamp="2026-01-01T00:00:00Z",
-                pipeline_flow="test", preset_key="", subject="",
-                output_format="", total_stages=1, failed_stages=0,
-                total_cost_usd=0.0, elapsed_ms=100, backends_used=[],
-            ))
+            store.save_record(
+                FeedbackRecord(
+                    run_id=f"del-{i}",
+                    timestamp="2026-01-01T00:00:00Z",
+                    pipeline_flow="test",
+                    preset_key="",
+                    subject="",
+                    output_format="",
+                    total_stages=1,
+                    failed_stages=0,
+                    total_cost_usd=0.0,
+                    elapsed_ms=100,
+                    backends_used=[],
+                )
+            )
 
         self.assertEqual(len(store.all_records()), 3)
         deleted = store.delete_all()
@@ -1981,20 +2271,29 @@ class TestFeedback(unittest.TestCase):
 
         # Add records with audit data
         for i in range(3):
-            store.save_record(FeedbackRecord(
-                run_id=f"exp-{i}", timestamp="2026-01-01T00:00:00Z",
-                pipeline_flow="audit", preset_key="fiae-audit", subject="programmierung",
-                output_format="audit", total_stages=3, failed_stages=0,
-                total_cost_usd=0.0, elapsed_ms=1500, backends_used=["groq"],
-                quality_rating=4,
-                estimated_time_saved_min=30,
-                audit_findings_total=5,
-                audit_blockers=1,
-                audit_warnings=3,
-                audit_completeness=0.4,
-                audit_feasibility=0.7,
-                contradictions_found=2,
-            ))
+            store.save_record(
+                FeedbackRecord(
+                    run_id=f"exp-{i}",
+                    timestamp="2026-01-01T00:00:00Z",
+                    pipeline_flow="audit",
+                    preset_key="fiae-audit",
+                    subject="programmierung",
+                    output_format="audit",
+                    total_stages=3,
+                    failed_stages=0,
+                    total_cost_usd=0.0,
+                    elapsed_ms=1500,
+                    backends_used=["groq"],
+                    quality_rating=4,
+                    estimated_time_saved_min=30,
+                    audit_findings_total=5,
+                    audit_blockers=1,
+                    audit_warnings=3,
+                    audit_completeness=0.4,
+                    audit_feasibility=0.7,
+                    contradictions_found=2,
+                )
+            )
 
         export = export_for_research(store)
 
@@ -2023,15 +2322,28 @@ class TestFeedback(unittest.TestCase):
         from schulpipeline.feedback import FeedbackRecord, FeedbackStore, export_for_research, format_research_export_md
 
         store = FeedbackStore(Path(self.tmpdir) / "feedback")
-        store.save_record(FeedbackRecord(
-            run_id="md-1", timestamp="2026-01-01T00:00:00Z",
-            pipeline_flow="worksheet", preset_key="test", subject="wirtschaft",
-            output_format="worksheet", total_stages=3, failed_stages=0,
-            total_cost_usd=0.0, elapsed_ms=1000, backends_used=["groq"],
-            quality_rating=4, estimated_time_saved_min=20,
-            audit_findings_total=3, audit_blockers=1, audit_completeness=0.5,
-            audit_feasibility=0.8, contradictions_found=1,
-        ))
+        store.save_record(
+            FeedbackRecord(
+                run_id="md-1",
+                timestamp="2026-01-01T00:00:00Z",
+                pipeline_flow="worksheet",
+                preset_key="test",
+                subject="wirtschaft",
+                output_format="worksheet",
+                total_stages=3,
+                failed_stages=0,
+                total_cost_usd=0.0,
+                elapsed_ms=1000,
+                backends_used=["groq"],
+                quality_rating=4,
+                estimated_time_saved_min=20,
+                audit_findings_total=3,
+                audit_blockers=1,
+                audit_completeness=0.5,
+                audit_feasibility=0.8,
+                contradictions_found=1,
+            )
+        )
 
         export = export_for_research(store)
         md = format_research_export_md(export)

@@ -35,48 +35,52 @@ _logger = logging.getLogger("schulpipeline.worksheet")
 
 def _safe_filename(title: str, max_len: int = 60) -> str:
     """Convert a title to a safe filename."""
-    replacements = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
-                    "Ä": "Ae", "Ö": "Oe", "Ü": "Ue"}
+    replacements = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss", "Ä": "Ae", "Ö": "Oe", "Ü": "Ue"}
     for old, new in replacements.items():
         title = title.replace(old, new)
     return "".join(c if c.isalnum() or c in "-_ " else "" for c in title).strip().replace(" ", "_")[:max_len]
+
 
 # ============================================================
 # Task Model
 # ============================================================
 
+
 @dataclass
 class ParsedTask:
     """A single task extracted from a worksheet."""
-    id: str                              # "uebung_2_aufgabe_1a"
-    label: str                           # "Übung 2, Aufgabe 1a"
-    task_type: str                       # calculation | table_fill | text_answer | external_link | multi_choice | unknown
-    text: str                            # The task text
-    context: str = ""                    # Supporting text (law references, formulas, etc.)
+
+    id: str  # "uebung_2_aufgabe_1a"
+    label: str  # "Übung 2, Aufgabe 1a"
+    task_type: str  # calculation | table_fill | text_answer | external_link | multi_choice | unknown
+    text: str  # The task text
+    context: str = ""  # Supporting text (law references, formulas, etc.)
     table_structure: dict | None = None  # For table_fill: {"headers": [...], "rows": [...]}
     data: dict[str, Any] = field(default_factory=dict)  # Extracted numbers, names, etc.
-    external_url: str = ""               # If task references an external site
-    solvable: bool = True                # False if we can't solve it (missing image, external quiz)
-    skip_reason: str = ""                # Why it's not solvable
+    external_url: str = ""  # If task references an external site
+    solvable: bool = True  # False if we can't solve it (missing image, external quiz)
+    skip_reason: str = ""  # Why it's not solvable
 
 
 @dataclass
 class SolvedTask:
     """A task with its solution."""
+
     task: ParsedTask
-    answer: str = ""                     # Text answer
-    table_data: dict | None = None       # Filled table: {"headers": [...], "rows": [[...]]}
+    answer: str = ""  # Text answer
+    table_data: dict | None = None  # Filled table: {"headers": [...], "rows": [[...]]}
     calculation_steps: list[str] = field(default_factory=list)  # Show your work
-    confidence: float = 1.0              # 0-1, how confident in the answer
+    confidence: float = 1.0  # 0-1, how confident in the answer
 
 
 @dataclass
 class WorksheetResult:
     """Complete worksheet with all tasks solved."""
+
     title: str
     subject: str
     tasks: list[SolvedTask]
-    unsolvable: list[ParsedTask]         # Tasks we couldn't solve
+    unsolvable: list[ParsedTask]  # Tasks we couldn't solve
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -251,10 +255,12 @@ class SolveStage(BaseStage):
                 continue
 
             solution = await self._solve_task(task, backend, preset)
-            solved.append({
-                "task": task,
-                "solution": solution,
-            })
+            solved.append(
+                {
+                    "task": task,
+                    "solution": solution,
+                }
+            )
 
         data = {
             "title": decomposed.get("title", "Arbeitsblatt"),
@@ -335,6 +341,7 @@ class SolveStage(BaseStage):
 # Format Stage — produces the output document
 # ============================================================
 
+
 def format_worksheet_as_md(result: dict[str, Any]) -> str:
     """Format solved worksheet as Markdown — the simple, always-works path."""
     lines = [f"# {result.get('title', 'Arbeitsblatt')}"]
@@ -369,7 +376,7 @@ def format_worksheet_as_md(result: dict[str, Any]) -> str:
                 # Pad if needed
                 while len(all_cells) < len(headers):
                     all_cells.append("")
-                lines.append("| " + " | ".join(str(c) for c in all_cells[:len(headers)]) + " |")
+                lines.append("| " + " | ".join(str(c) for c in all_cells[: len(headers)]) + " |")
             lines.append("")
 
         # Show text answer

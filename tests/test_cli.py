@@ -1,4 +1,5 @@
 """Tests for schulpipeline.cli — basic CLI smoke tests."""
+
 from __future__ import annotations
 
 import io
@@ -69,6 +70,7 @@ def test_cmd_sessions_empty():
         buf = io.StringIO()
         with patch("sys.stdout", buf):
             from schulpipeline.cli import cmd_sessions
+
             exit_code = cmd_sessions(args, config)
     assert exit_code == 0
 
@@ -80,6 +82,7 @@ def test_cmd_scan_example_dir():
     examples_dir = Path(__file__).parent.parent / "examples" / "tasks"
     if not examples_dir.is_dir():
         import pytest
+
         pytest.skip("examples/tasks/ not found")
 
     parser = build_parser()

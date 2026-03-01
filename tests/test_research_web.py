@@ -1,4 +1,5 @@
 """Tests for schulpipeline.research.web — DiskCache and search utilities."""
+
 from __future__ import annotations
 
 import json

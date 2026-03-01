@@ -28,17 +28,18 @@ logger = logging.getLogger(__name__)
 # Data Model
 # ============================================================
 
+
 @dataclass
 class ContentResult:
     """Standardised output from any file reader."""
 
     full_text: str = ""
-    text_preview: str = ""           # first 500 chars
+    text_preview: str = ""  # first 500 chars
     paragraph_count: int = 0
     table_count: int = 0
     empty_table_cells: int = 0
     image_count: int = 0
-    language: str = ""               # "java", "sql", "xml", "german", ""
+    language: str = ""  # "java", "sql", "xml", "german", ""
     structure: dict = field(default_factory=dict)  # type-specific metadata
     error: str | None = None
 
@@ -111,24 +112,48 @@ class ScanResult:
 # ============================================================
 
 TASK_KEYWORDS_STRONG = [
-    r"\bAufgabe[n]?\b", r"\bÜbung(?:en)?\b", r"\bArbeitsteil\b",
-    r"\bBearbeiten Sie\b", r"\bFormulieren Sie\b", r"\bBeantworten Sie\b",
-    r"\bRecherchieren Sie\b", r"\bErstellen Sie\b", r"\bBeschreiben Sie\b",
-    r"\bErklären Sie\b", r"\bBegründen Sie\b", r"\bNennen Sie\b",
-    r"\bDefinieren Sie\b", r"\bVergleichen Sie\b", r"\bAnalysieren Sie\b",
-    r"\bBewerten Sie\b", r"\bErörtern Sie\b", r"\bKreuzen Sie\b",
-    r"\bErgänzen Sie\b", r"\bLesen Sie\b", r"\bSchreiben Sie\b",
-    r"\bStellen Sie\b.*\bvor\b", r"\bSuchen Sie\b", r"\bÜberprüfen Sie\b",
-    r"\bSammeln Sie\b", r"\bNotieren Sie\b",
+    r"\bAufgabe[n]?\b",
+    r"\bÜbung(?:en)?\b",
+    r"\bArbeitsteil\b",
+    r"\bBearbeiten Sie\b",
+    r"\bFormulieren Sie\b",
+    r"\bBeantworten Sie\b",
+    r"\bRecherchieren Sie\b",
+    r"\bErstellen Sie\b",
+    r"\bBeschreiben Sie\b",
+    r"\bErklären Sie\b",
+    r"\bBegründen Sie\b",
+    r"\bNennen Sie\b",
+    r"\bDefinieren Sie\b",
+    r"\bVergleichen Sie\b",
+    r"\bAnalysieren Sie\b",
+    r"\bBewerten Sie\b",
+    r"\bErörtern Sie\b",
+    r"\bKreuzen Sie\b",
+    r"\bErgänzen Sie\b",
+    r"\bLesen Sie\b",
+    r"\bSchreiben Sie\b",
+    r"\bStellen Sie\b.*\bvor\b",
+    r"\bSuchen Sie\b",
+    r"\bÜberprüfen Sie\b",
+    r"\bSammeln Sie\b",
+    r"\bNotieren Sie\b",
 ]
 TASK_KEYWORDS_WEAK = [
-    r"\bLösung(?:en|sword)?\b", r"\bSilbenrätsel\b",
-    r"\bSituation:\b", r"\bBearbeitungsvorschlag\b", r"\bKreuzen Sie an\b",
+    r"\bLösung(?:en|sword)?\b",
+    r"\bSilbenrätsel\b",
+    r"\bSituation:\b",
+    r"\bBearbeitungsvorschlag\b",
+    r"\bKreuzen Sie an\b",
 ]
 INFO_KEYWORDS = [
-    r"\bInformation(?:steil)?\b", r"\bInfo:\b", r"\bDefinition\b",
-    r"\bGrundsätzlich\b", r"\bMan unterscheidet\b",
-    r"\bZu den\b.*\bzählen\b", r"\bBeispiel(?:e)?\b",
+    r"\bInformation(?:steil)?\b",
+    r"\bInfo:\b",
+    r"\bDefinition\b",
+    r"\bGrundsätzlich\b",
+    r"\bMan unterscheidet\b",
+    r"\bZu den\b.*\bzählen\b",
+    r"\bBeispiel(?:e)?\b",
 ]
 
 ONENOTE_EMBED_RE = re.compile(r"<<(.+?\.(docx|pdf|pptx))>>")
@@ -136,17 +161,25 @@ ONENOTE_FILENAME_RE = re.compile(r".*OneNote\.docx$", re.IGNORECASE)
 DOCX_PDF_DUP_RE = re.compile(r"^(.+\.docx)\.pdf$")
 TASK_FILENAME_RE = re.compile(r"(?:Aufgabe|Übung|Arbeit|_A\d+_)", re.IGNORECASE)
 INFO_FILENAME_RE = re.compile(
-    r"(?:_Info_|_Info\b|Information|_Texte?\b|_Text\b)", re.IGNORECASE,
+    r"(?:_Info_|_Info\b|Information|_Texte?\b|_Text\b)",
+    re.IGNORECASE,
 )
 TEXT_MATERIAL_FILENAME_RE = re.compile(
-    r"(?:_Texte?\.docx$|_Text\.docx$)", re.IGNORECASE,
+    r"(?:_Texte?\.docx$|_Text\.docx$)",
+    re.IGNORECASE,
 )
 PLANNING_FILENAME_RE = re.compile(r"(?:Planung|Bewertung|Gliederung)", re.IGNORECASE)
 
 # Roles
 ROLES = {
-    "task", "info", "answer", "onenote_export",
-    "duplicate", "empty", "resource", "unknown",
+    "task",
+    "info",
+    "answer",
+    "onenote_export",
+    "duplicate",
+    "empty",
+    "resource",
+    "unknown",
 }
 
 # ============================================================
@@ -155,26 +188,41 @@ ROLES = {
 
 TYPE_MAP: dict[str, str] = {
     # Documents
-    ".docx": "docx", ".pdf": "pdf", ".txt": "txt",
-    ".pptx": "pptx", ".xlsx": "xlsx",
+    ".docx": "docx",
+    ".pdf": "pdf",
+    ".txt": "txt",
+    ".pptx": "pptx",
+    ".xlsx": "xlsx",
     # Source code
-    ".java": "java", ".py": "python", ".cs": "csharp",
-    ".js": "javascript", ".html": "html", ".css": "css", ".fxml": "fxml",
+    ".java": "java",
+    ".py": "python",
+    ".cs": "csharp",
+    ".js": "javascript",
+    ".html": "html",
+    ".css": "css",
+    ".fxml": "fxml",
     # Data
-    ".db": "db", ".sqlite": "db", ".sql": "sql",
-    ".csv": "csv", ".json": "json",
+    ".db": "db",
+    ".sqlite": "db",
+    ".sql": "sql",
+    ".csv": "csv",
+    ".json": "json",
     # Diagrams
     ".drawio": "drawio",
     # Archives
     ".zip": "zip",
     # Images
-    ".png": "png", ".jpg": "png", ".jpeg": "png", ".gif": "png",
+    ".png": "png",
+    ".jpg": "png",
+    ".jpeg": "png",
+    ".gif": "png",
 }
 
 
 # ============================================================
 # Readers
 # ============================================================
+
 
 def read_docx(path: Path) -> ContentResult:
     """Read a .docx file. Extract paragraphs, tables, images."""
@@ -238,10 +286,13 @@ def read_java(path: Path) -> ContentResult:
     imports = re.findall(r"^import\s+(.+);", text, re.MULTILINE)
     has_main = bool(re.search(r"public\s+static\s+void\s+main\s*\(", text))
     loc = sum(1 for line in text.splitlines() if line.strip())
-    is_template = bool(re.search(
-        r"(?:TODO|FIXME|_NN|YOUR[\s_]CODE[\s_]HERE|//\s*\.\.\.|/\*\s*\.\.\.\s*\*/)",
-        text, re.IGNORECASE,
-    ))
+    is_template = bool(
+        re.search(
+            r"(?:TODO|FIXME|_NN|YOUR[\s_]CODE[\s_]HERE|//\s*\.\.\.|/\*\s*\.\.\.\s*\*/)",
+            text,
+            re.IGNORECASE,
+        )
+    )
 
     structure = {
         "classes": classes,
@@ -255,8 +306,13 @@ def read_java(path: Path) -> ContentResult:
     # Detect language from extension
     suffix = path.suffix.lower()
     lang_map = {
-        ".java": "java", ".py": "python", ".cs": "csharp",
-        ".js": "javascript", ".html": "html", ".css": "css", ".fxml": "fxml",
+        ".java": "java",
+        ".py": "python",
+        ".cs": "csharp",
+        ".js": "javascript",
+        ".html": "html",
+        ".css": "css",
+        ".fxml": "fxml",
     }
     language = lang_map.get(suffix, "code")
 
@@ -313,16 +369,17 @@ def read_sqlite(path: Path) -> ContentResult:
 
         tables = []
         for (name,) in cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-            " AND name NOT LIKE 'sqlite_%'",
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
         ).fetchall():
             cols = cursor.execute(f"PRAGMA table_info('{name}')").fetchall()
             count = cursor.execute(f"SELECT COUNT(*) FROM '{name}'").fetchone()[0]
-            tables.append({
-                "name": name,
-                "columns": [{"name": c[1], "type": c[2]} for c in cols],
-                "row_count": count,
-            })
+            tables.append(
+                {
+                    "name": name,
+                    "columns": [{"name": c[1], "type": c[2]} for c in cols],
+                    "row_count": count,
+                }
+            )
 
         conn.close()
 
@@ -427,10 +484,7 @@ def read_pdf(path: Path) -> ContentResult:
     except OSError:
         size = 0
     return ContentResult(
-        text_preview=(
-            f"[PDF: {path.name}, {size} bytes"
-            " — install pdfplumber for text extraction]"
-        ),
+        text_preview=(f"[PDF: {path.name}, {size} bytes — install pdfplumber for text extraction]"),
         structure={"page_count": 0},
         error="no_pdf_library",
     )
@@ -441,7 +495,7 @@ READERS: dict[str, Callable[[Path], ContentResult]] = {
     "docx": read_docx,
     "txt": read_txt,
     "java": read_java,
-    "python": read_java,    # same structural reader
+    "python": read_java,  # same structural reader
     "csharp": read_java,
     "javascript": read_java,
     "html": read_java,
@@ -457,6 +511,7 @@ READERS: dict[str, Callable[[Path], ContentResult]] = {
 # ============================================================
 # Classification
 # ============================================================
+
 
 def _match_keywords(text: str, patterns: list[str]) -> list[str]:
     """:param text: The input text to search within.
@@ -484,8 +539,11 @@ def classify_file(path: str | Path, scan_root: str | Path) -> ScannedFile:
     content_type = TYPE_MAP.get(suffix, "unknown")
 
     sf = ScannedFile(
-        path=rel_path, filename=filename, subject_folder=subject_folder,
-        size_bytes=size, content_type=content_type,
+        path=rel_path,
+        filename=filename,
+        subject_folder=subject_folder,
+        size_bytes=size,
+        content_type=content_type,
     )
 
     # --- Quick exits ---
@@ -597,8 +655,7 @@ def classify_file(path: str | Path, scan_root: str | Path) -> ScannedFile:
         if ONENOTE_FILENAME_RE.match(filename):
             cleaned = ONENOTE_EMBED_RE.sub("", full_text).strip()
             substantive = [
-                line for line in cleaned.splitlines()
-                if line.strip() and line.strip().lower() not in ("x", "fehlt", "")
+                line for line in cleaned.splitlines() if line.strip() and line.strip().lower() not in ("x", "fehlt", "")
             ]
             if len(substantive) > 3:
                 sf.role, sf.confidence = "answer", 0.85
@@ -675,6 +732,7 @@ def _apply_content_result(sf: ScannedFile, cr: ContentResult) -> None:
 # ============================================================
 # Bundle Detection
 # ============================================================
+
 
 def _normalize_stem(fn: str) -> str:
     """Normalizes the stem of a file path by converting it to lowercase and removing specific suffixes and non-alphanumeric characters.
@@ -773,9 +831,7 @@ def detect_project_bundles(
         is_project = bool(code_types) and bool(doc_types | other_types)
 
         # LVL progression detection
-        has_levels = any(
-            re.search(r"LVL\d|Level\d", f.filename, re.I) for f in dir_files
-        )
+        has_levels = any(re.search(r"LVL\d|Level\d", f.filename, re.I) for f in dir_files)
 
         if not (is_project or has_levels):
             continue
@@ -835,7 +891,8 @@ def build_bundles(files: list[ScannedFile], scan_root: Path | None = None) -> li
                 continue
             b = TaskBundle(
                 bundle_id=_make_id(folder, tf.filename),
-                title=_title(tf), subject=folder,
+                title=_title(tf),
+                subject=folder,
             )
             b.task_files.append(tf.path)
             used.add(tf.path)
@@ -858,11 +915,7 @@ def build_bundles(files: list[ScannedFile], scan_root: Path | None = None) -> li
 
             ts = _normalize_stem(tf.filename)
             for f in ffiles:
-                if (
-                    f.path not in used
-                    and f.role == "info"
-                    and _stems_related(ts, _normalize_stem(f.filename))
-                ):
+                if f.path not in used and f.role == "info" and _stems_related(ts, _normalize_stem(f.filename)):
                     b.info_files.append(f.path)
                     used.add(f.path)
             bundles.append(b)
@@ -872,7 +925,8 @@ def build_bundles(files: list[ScannedFile], scan_root: Path | None = None) -> li
                 continue
             b = TaskBundle(
                 bundle_id=_make_id(folder, f.filename),
-                title=_title(f), subject=folder,
+                title=_title(f),
+                subject=folder,
             )
             if f.role == "task":
                 b.task_files.append(f.path)
@@ -891,6 +945,7 @@ def build_bundles(files: list[ScannedFile], scan_root: Path | None = None) -> li
 # ============================================================
 # Output
 # ============================================================
+
 
 def to_manifest(result: ScanResult) -> dict:
     """Convert scan result to a JSON-serialisable manifest dict."""
@@ -923,22 +978,18 @@ def to_manifest(result: ScanResult) -> dict:
 
     for f in result.files:
         e = {
-            "path": f.path, "role": f.role,
+            "path": f.path,
+            "role": f.role,
             "confidence": round(f.confidence, 2),
-            "content_type": f.content_type, "size_bytes": f.size_bytes,
+            "content_type": f.content_type,
+            "size_bytes": f.size_bytes,
         }
         if f.bundle_id:
             e["bundle_id"] = f.bundle_id
         if f.task_signals:
-            e["task_signals"] = [
-                p.replace("\\b", "").replace("\\", "")[:25]
-                for p in f.task_signals[:5]
-            ]
+            e["task_signals"] = [p.replace("\\b", "").replace("\\", "")[:25] for p in f.task_signals[:5]]
         if f.info_signals:
-            e["info_signals"] = [
-                p.replace("\\b", "").replace("\\", "")[:25]
-                for p in f.info_signals[:5]
-            ]
+            e["info_signals"] = [p.replace("\\b", "").replace("\\", "")[:25] for p in f.info_signals[:5]]
         if f.embedded_refs:
             e["embedded_refs"] = f.embedded_refs
         if f.duplicate_of:
@@ -967,9 +1018,14 @@ def to_summary(result: ScanResult) -> str:
     for f in result.files:
         rc[f.role] = rc.get(f.role, 0) + 1
     icons = {
-        "task": "TASK", "info": "INFO", "answer": "ANSW",
-        "onenote_export": "NOTE", "duplicate": "DUPL",
-        "empty": "EMPT", "resource": "RSRC", "unknown": "????",
+        "task": "TASK",
+        "info": "INFO",
+        "answer": "ANSW",
+        "onenote_export": "NOTE",
+        "duplicate": "DUPL",
+        "empty": "EMPT",
+        "resource": "RSRC",
+        "unknown": "????",
     }
     lines.append("Classification:")
     for r, c in sorted(rc.items(), key=lambda x: -x[1]):
@@ -1001,9 +1057,7 @@ def to_summary(result: ScanResult) -> str:
             p.append(f"{len(b.answer_files)}A")
         if b.duplicates:
             p.append(f"{len(b.duplicates)}D")
-        lines.append(
-            f"  [{b.subject:.<15}] ({'+'.join(p):>8}) {b.title[:55]}"
-        )
+        lines.append(f"  [{b.subject:.<15}] ({'+'.join(p):>8}) {b.title[:55]}")
 
     # Per-file
     lines.append("\nPer-file:")
@@ -1027,13 +1081,13 @@ def to_summary(result: ScanResult) -> str:
 # Scan Runner
 # ============================================================
 
+
 def scan_directory(root: str | Path) -> ScanResult:
     """Scan a directory tree and return classified files + bundles."""
     root = Path(root)
     result = ScanResult(scan_root=str(root))
     result.subject_folders = [
-        d.name for d in sorted(root.iterdir())
-        if d.is_dir() and not d.name.startswith(("_", "."))
+        d.name for d in sorted(root.iterdir()) if d.is_dir() and not d.name.startswith(("_", "."))
     ]
 
     all_files: list[Path] = []
@@ -1065,6 +1119,7 @@ def scan_directory(root: str | Path) -> ScanResult:
 # ============================================================
 # CLI entry point
 # ============================================================
+
 
 def main(argv: list[str] | None = None) -> None:
     """Run the scanner from the command line."""

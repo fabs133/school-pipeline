@@ -18,6 +18,7 @@ from schulpipeline.presets import resolve_preset
 # PPTX Builder
 # ============================================================
 
+
 def test_pptx_creates_file(synthesis_data, tmp_path):
     out = tmp_path / "test.pptx"
     build_pptx(synthesis_data, out)
@@ -30,6 +31,7 @@ def test_pptx_has_correct_slide_count(synthesis_data, tmp_path):
     build_pptx(synthesis_data, out)
 
     from pptx import Presentation
+
     prs = Presentation(str(out))
     assert len(prs.slides) == len(synthesis_data["sections"])
 
@@ -39,6 +41,7 @@ def test_pptx_title_slide_has_heading(synthesis_data, tmp_path):
     build_pptx(synthesis_data, out)
 
     from pptx import Presentation
+
     prs = Presentation(str(out))
     first_slide = prs.slides[0]
     texts = [shape.text for shape in first_slide.shapes if shape.has_text_frame]
@@ -50,8 +53,13 @@ def test_pptx_minimal_input(tmp_path):
     data = {
         "title": "Minimal",
         "sections": [
-            {"section_id": "s1", "heading": "Only Slide", "content": "Content here",
-             "bullet_points": [], "speaker_notes": None}
+            {
+                "section_id": "s1",
+                "heading": "Only Slide",
+                "content": "Content here",
+                "bullet_points": [],
+                "speaker_notes": None,
+            }
         ],
         "sources": [],
     }
@@ -60,6 +68,7 @@ def test_pptx_minimal_input(tmp_path):
     assert out.exists()
 
     from pptx import Presentation
+
     prs = Presentation(str(out))
     assert len(prs.slides) == 1
 
@@ -69,10 +78,14 @@ def test_pptx_empty_section_skipped(tmp_path):
     data = {
         "title": "Test",
         "sections": [
-            {"section_id": "s1", "heading": "Real Slide", "content": "Content",
-             "bullet_points": ["A"], "speaker_notes": None},
-            {"section_id": "s2", "heading": "", "content": "",
-             "bullet_points": [], "speaker_notes": None},
+            {
+                "section_id": "s1",
+                "heading": "Real Slide",
+                "content": "Content",
+                "bullet_points": ["A"],
+                "speaker_notes": None,
+            },
+            {"section_id": "s2", "heading": "", "content": "", "bullet_points": [], "speaker_notes": None},
         ],
         "sources": [],
     }
@@ -80,6 +93,7 @@ def test_pptx_empty_section_skipped(tmp_path):
     build_pptx(data, out)
 
     from pptx import Presentation
+
     prs = Presentation(str(out))
     assert len(prs.slides) == 1
 
@@ -90,10 +104,20 @@ def test_pptx_sources_detection_variants(tmp_path):
         data = {
             "title": "Test",
             "sections": [
-                {"section_id": "s1", "heading": "Content", "content": "Text here",
-                 "bullet_points": ["A"], "speaker_notes": None},
-                {"section_id": "s2", "heading": heading, "content": "",
-                 "bullet_points": ["Source 1", "Source 2"], "speaker_notes": None},
+                {
+                    "section_id": "s1",
+                    "heading": "Content",
+                    "content": "Text here",
+                    "bullet_points": ["A"],
+                    "speaker_notes": None,
+                },
+                {
+                    "section_id": "s2",
+                    "heading": heading,
+                    "content": "",
+                    "bullet_points": ["Source 1", "Source 2"],
+                    "speaker_notes": None,
+                },
             ],
             "sources": [],
         }
@@ -101,6 +125,7 @@ def test_pptx_sources_detection_variants(tmp_path):
         build_pptx(data, out)
 
         from pptx import Presentation
+
         prs = Presentation(str(out))
         # Should have 2 slides (content + sources), sources detected properly
         assert len(prs.slides) == 2
@@ -109,6 +134,7 @@ def test_pptx_sources_detection_variants(tmp_path):
 # ============================================================
 # DOCX Builder — Sources Deduplication
 # ============================================================
+
 
 def test_docx_sources_dedup(tmp_path):
     """Sources from inline sections and top-level are deduplicated."""
@@ -124,6 +150,7 @@ def test_docx_sources_dedup(tmp_path):
     build_docx(data, out)
 
     from docx import Document
+
     doc = Document(str(out))
     all_text = [p.text for p in doc.paragraphs]
     # "Source A" should appear only once (deduplicated)
@@ -143,6 +170,7 @@ def test_docx_no_sources_when_empty(tmp_path):
     build_docx(data, out)
 
     from docx import Document
+
     doc = Document(str(out))
     headings = [p.text for p in doc.paragraphs if p.style.name.startswith("Heading")]
     assert "Quellen" not in headings
@@ -151,6 +179,7 @@ def test_docx_no_sources_when_empty(tmp_path):
 # ============================================================
 # DOCX Builder
 # ============================================================
+
 
 def test_docx_creates_file(synthesis_data, tmp_path):
     out = tmp_path / "test.docx"
@@ -164,6 +193,7 @@ def test_docx_contains_title(synthesis_data, tmp_path):
     build_docx(synthesis_data, out)
 
     from docx import Document
+
     doc = Document(str(out))
     paragraphs = [p.text for p in doc.paragraphs]
     assert synthesis_data["title"] in paragraphs
@@ -174,6 +204,7 @@ def test_docx_contains_sources(synthesis_data, tmp_path):
     build_docx(synthesis_data, out)
 
     from docx import Document
+
     doc = Document(str(out))
     all_text = "\n".join(p.text for p in doc.paragraphs)
     assert "Quellen" in all_text
@@ -182,9 +213,7 @@ def test_docx_contains_sources(synthesis_data, tmp_path):
 def test_docx_minimal_input(tmp_path):
     data = {
         "title": "Minimal Doc",
-        "sections": [
-            {"heading": "Chapter 1", "content": "Some text here.", "bullet_points": []}
-        ],
+        "sections": [{"heading": "Chapter 1", "content": "Some text here.", "bullet_points": []}],
         "sources": [],
     }
     out = tmp_path / "minimal.docx"
@@ -195,6 +224,7 @@ def test_docx_minimal_input(tmp_path):
 # ============================================================
 # Markdown Builder
 # ============================================================
+
 
 def test_md_creates_file(synthesis_data, tmp_path):
     out = tmp_path / "test.md"
@@ -251,6 +281,7 @@ def test_md_minimal_input(tmp_path):
 # PPTX Builder — Backward Compatibility
 # ============================================================
 
+
 def test_pptx_backward_compat(synthesis_data, tmp_path):
     """build_pptx() without preset still works (defaults)."""
     out = tmp_path / "compat.pptx"
@@ -262,6 +293,7 @@ def test_pptx_backward_compat(synthesis_data, tmp_path):
 # ============================================================
 # DOCX Builder — Style & Visual Tests
 # ============================================================
+
 
 def test_docx_backward_compat(synthesis_data, tmp_path):
     """build_docx() without style args still works (defaults)."""
@@ -277,6 +309,7 @@ def test_docx_with_style_font(synthesis_data, modern_style, visual_config_disabl
     build_docx(synthesis_data, out, modern_style.visual, visual_config_disabled)
 
     from docx import Document
+
     doc = Document(str(out))
     normal_font = doc.styles["Normal"].font
     assert normal_font.name == "Arial"
@@ -288,6 +321,7 @@ def test_docx_visual_placeholder(synthesis_data_with_visuals, clean_style, visua
     build_docx(synthesis_data_with_visuals, out, clean_style.visual, visual_config_enabled)
 
     from docx import Document
+
     doc = Document(str(out))
     all_text = "\n".join(p.text for p in doc.paragraphs)
     assert "Angriffsarten" in all_text  # The intent text should appear
@@ -299,12 +333,10 @@ def test_docx_visuals_disabled(synthesis_data_with_visuals, clean_style, visual_
     build_docx(synthesis_data_with_visuals, out, clean_style.visual, visual_config_disabled)
 
     from docx import Document
+
     doc = Document(str(out))
     # Check that the placeholder intent text does NOT appear
-    italic_paragraphs = [
-        p for p in doc.paragraphs
-        if p.runs and any(r.italic for r in p.runs)
-    ]
+    italic_paragraphs = [p for p in doc.paragraphs if p.runs and any(r.italic for r in p.runs)]
     # No italic visual placeholder paragraphs
     assert len(italic_paragraphs) == 0
 
@@ -313,8 +345,8 @@ def test_docx_visuals_disabled(synthesis_data_with_visuals, clean_style, visual_
 # Slide Registry — classify_section
 # ============================================================
 
-class TestClassifySection:
 
+class TestClassifySection:
     def _section(self, heading="", content="", bullets=None, visuals=None):
         return {
             "heading": heading,
@@ -336,7 +368,9 @@ class TestClassifySection:
         """section_break spec has never_last=True — should not win at last index."""
         section = self._section(heading="Abschnitt 2")
         spec = classify_section(
-            section, index=4, total=5,
+            section,
+            index=4,
+            total=5,
             structure_hint="section_break",
             style="bullet-heavy",
         )
@@ -354,10 +388,13 @@ class TestClassifySection:
     def test_structure_hint_fazit_prefers_closing(self):
         """Structure hint 'fazit' should produce the closing spec."""
         section = self._section(
-            heading="Fazit", content="Zusammenfassend lässt sich sagen...",
+            heading="Fazit",
+            content="Zusammenfassend lässt sich sagen...",
         )
         spec = classify_section(
-            section, index=3, total=5,
+            section,
+            index=3,
+            total=5,
             structure_hint="fazit",
             style="prose",
         )
@@ -366,10 +403,13 @@ class TestClassifySection:
     def test_structure_hint_inhalt_prefers_content(self):
         """Structure hint 'inhalt' with bullets should resolve to content."""
         section = self._section(
-            heading="Firewall", bullets=["Punkt 1", "Punkt 2", "Punkt 3"],
+            heading="Firewall",
+            bullets=["Punkt 1", "Punkt 2", "Punkt 3"],
         )
         spec = classify_section(
-            section, index=2, total=5,
+            section,
+            index=2,
+            total=5,
             structure_hint="inhalt",
             style="bullet-heavy",
         )
@@ -379,7 +419,9 @@ class TestClassifySection:
         """An unrecognised structure hint does not crash — scoring proceeds normally."""
         section = self._section(heading="Irgendwas", bullets=["a", "b"])
         spec = classify_section(
-            section, index=1, total=5,
+            section,
+            index=1,
+            total=5,
             structure_hint="unbekannt",
             style="bullet-heavy",
         )
@@ -394,7 +436,9 @@ class TestClassifySection:
             content=" ".join(["word"] * 60),
         )
         spec = classify_section(
-            body_section, index=1, total=5,
+            body_section,
+            index=1,
+            total=5,
             structure_hint="einleitung",
             style="prose",
         )
@@ -412,11 +456,15 @@ class TestClassifySection:
 
 
 class TestClassifyPresentation:
-
     def _sections(self, count=5):
         return [
-            {"heading": f"Section {i}", "content": "text", "bullet_points": ["a", "b"],
-             "visuals": [], "speaker_notes": None}
+            {
+                "heading": f"Section {i}",
+                "content": "text",
+                "bullet_points": ["a", "b"],
+                "visuals": [],
+                "speaker_notes": None,
+            }
             for i in range(count)
         ]
 
@@ -463,8 +511,7 @@ class TestRegistryIntegrity:
 
     def test_structure_aliases_are_frozensets(self):
         for spec in _REGISTRY:
-            assert isinstance(spec.structure_aliases, frozenset), \
-                f"{spec.key}.structure_aliases is not a frozenset"
+            assert isinstance(spec.structure_aliases, frozenset), f"{spec.key}.structure_aliases is not a frozenset"
 
     def test_get_spec_raises_on_unknown_key(self):
         with pytest.raises(KeyError):
@@ -475,14 +522,13 @@ class TestRegistryIntegrity:
 # Converter — synthesis_to_presentation
 # ============================================================
 
-class TestSynthesisToPresentation:
 
+class TestSynthesisToPresentation:
     def test_basic_conversion(self, synthesis_data):
         """Synthesis dict converts to a slideforge Presentation with correct slide count."""
         pres = synthesis_to_presentation(synthesis_data)
         non_empty = [
-            s for s in synthesis_data["sections"]
-            if s.get("heading") or s.get("content") or s.get("bullet_points")
+            s for s in synthesis_data["sections"] if s.get("heading") or s.get("content") or s.get("bullet_points")
         ]
         assert len(pres.slides) == len(non_empty)
         assert pres.name == synthesis_data["title"]
@@ -528,8 +574,7 @@ class TestSynthesisToPresentation:
             "title": "Test",
             "sections": [
                 {"heading": "Title", "content": "Sub", "bullet_points": []},
-                {"heading": "Points", "content": "",
-                 "bullet_points": ["Alpha", "Beta", "Gamma"]},
+                {"heading": "Points", "content": "", "bullet_points": ["Alpha", "Beta", "Gamma"]},
             ],
             "sources": [],
         }
@@ -542,8 +587,7 @@ class TestSynthesisToPresentation:
         data = {
             "title": "Test",
             "sections": [
-                {"heading": "Slide", "content": "Body",
-                 "bullet_points": [], "speaker_notes": "Say this aloud"},
+                {"heading": "Slide", "content": "Body", "bullet_points": [], "speaker_notes": "Say this aloud"},
             ],
             "sources": [],
         }

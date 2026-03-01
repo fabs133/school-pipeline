@@ -21,6 +21,7 @@ class ArtifactStage(BaseStage):
     :return: Dictionary containing the generated artifact details.
     :rtype: dict[str, Any]
     """
+
     name = "artifact"
     spec_path = "specs/artifact.json"
     required_context = frozenset({"synthesize", "plan"})
@@ -48,9 +49,7 @@ class ArtifactStage(BaseStage):
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if this is a coding project (agent mode)
-        is_project = artifact_type == "project" or (
-            preset and preset.output_constraints.get("agent_mode")
-        )
+        is_project = artifact_type == "project" or (preset and preset.output_constraints.get("agent_mode"))
 
         if is_project:
             return await self._build_project(context, synthesis, intake, output_dir, backend, config, preset)
@@ -62,17 +61,21 @@ class ArtifactStage(BaseStage):
 
         # Resolve style and visual config from pipeline context
         from ..styles import DEFAULT_STYLE, DISABLED_VISUAL_SLOTS
+
         style = context.get("style", DEFAULT_STYLE)
         visual_config = context.get("visual_slots", DISABLED_VISUAL_SLOTS)
 
         if artifact_type == "pptx":
             from ..artifacts.pptx_builder import build_pptx
+
             build_pptx(synthesis, output_path, preset=preset)
         elif artifact_type == "docx":
             from ..artifacts.docx_builder import build_docx
+
             build_docx(synthesis, output_path, style.visual, visual_config)
         elif artifact_type == "md":
             from ..artifacts.md_builder import build_md
+
             build_md(synthesis, output_path)
         else:
             raise ValueError(f"Unknown artifact type: {artifact_type}")
@@ -96,8 +99,7 @@ class ArtifactStage(BaseStage):
         }
 
     async def _build_project(
-        self, context: dict, synthesis: dict, intake: dict, output_dir: Path,
-        backend: Any, config: Any, preset: Any
+        self, context: dict, synthesis: dict, intake: dict, output_dir: Path, backend: Any, config: Any, preset: Any
     ) -> dict[str, Any]:
         """Build a coding project using an agent."""
         from ..agents import AGENT_REGISTRY, build_project_spec
@@ -113,19 +115,15 @@ class ArtifactStage(BaseStage):
         agent_name = context.get("agent", "local_llm")
         agent_cls = AGENT_REGISTRY.get(agent_name)
         if agent_cls is None:
-            raise ValueError(
-                f"Unknown agent '{agent_name}'. "
-                f"Available: {list(AGENT_REGISTRY.keys())}"
-            )
+            raise ValueError(f"Unknown agent '{agent_name}'. Available: {list(AGENT_REGISTRY.keys())}")
         agent = agent_cls(backend)
 
         # Estimate cost and warn if non-zero
         cost = await agent.estimate_cost(spec)
         if cost > 0:
             import logging
-            logging.getLogger("schulpipeline").warning(
-                f"Agent '{agent.name}' geschätzte Kosten: ${cost:.2f}"
-            )
+
+            logging.getLogger("schulpipeline").warning(f"Agent '{agent.name}' geschätzte Kosten: ${cost:.2f}")
 
         # Execute
         result = await agent.execute(spec, project_dir)
@@ -141,9 +139,7 @@ class ArtifactStage(BaseStage):
                 "has_title": True,
                 "section_count_matches": True,
                 "no_placeholder_text": True,
-                "file_size_bytes": sum(
-                    Path(f).stat().st_size for f in result.files_created if Path(f).exists()
-                ),
+                "file_size_bytes": sum(Path(f).stat().st_size for f in result.files_created if Path(f).exists()),
             },
             "agent": result.agent_name,
             "files": result.files_created,

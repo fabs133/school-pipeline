@@ -16,6 +16,7 @@ from tests.conftest import DEFAULT_STAGE_RESPONSES
 # stages/base.py
 # ============================================================
 
+
 def test_stage_result_defaults():
     r = StageResult(stage="test", success=True)
     assert r.data == {}
@@ -89,6 +90,7 @@ async def test_base_stage_wraps_exceptions():
 # stages/intake.py helpers
 # ============================================================
 
+
 def test_parse_json_response_plain():
     result = _parse_json_response('{"key": "value"}')
     assert result == {"key": "value"}
@@ -136,6 +138,7 @@ def test_infer_format():
 # stages/intake.py
 # ============================================================
 
+
 @pytest.mark.asyncio
 async def test_intake_stage_text(mock_router, mock_config):
     stage = IntakeStage()
@@ -167,6 +170,7 @@ async def test_intake_subject_hint_overrides_llm(mock_router, mock_config):
 # ============================================================
 # stages/plan.py
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_plan_stage(mock_router, mock_config):
@@ -201,6 +205,7 @@ async def test_plan_stage_enforces_artifact_type(mock_router, mock_config):
 # stages/research.py
 # ============================================================
 
+
 @pytest.mark.asyncio
 async def test_research_stage(mock_router, mock_config):
     intake_data = json.loads(DEFAULT_STAGE_RESPONSES["Aufgaben-Parser"])
@@ -222,14 +227,20 @@ async def test_research_sanitizes_urls_when_web_disabled(mock_config):
     from tests.conftest import MockBackend
 
     # Mock that returns findings with a fabricated URL
-    research_with_urls = json.dumps({
-        "sections": [
-            {"section_id": "section_02", "findings": [
-                {"content": "Some fact", "source": "https://fake-url.example.com", "relevance": 0.9},
-                {"content": "Another fact", "source": "llm_knowledge", "relevance": 0.8},
-            ], "sufficient": True},
-        ]
-    })
+    research_with_urls = json.dumps(
+        {
+            "sections": [
+                {
+                    "section_id": "section_02",
+                    "findings": [
+                        {"content": "Some fact", "source": "https://fake-url.example.com", "relevance": 0.9},
+                        {"content": "Another fact", "source": "llm_knowledge", "relevance": 0.8},
+                    ],
+                    "sufficient": True,
+                },
+            ]
+        }
+    )
     mock_backend = MockBackend(responses={"Recherche-Assistent": research_with_urls})
 
     router = BackendRouter.__new__(BackendRouter)
@@ -253,14 +264,14 @@ async def test_research_sanitizes_urls_when_web_disabled(mock_config):
     assert result.success
     for section in result.data["sections"]:
         for finding in section["findings"]:
-            assert not finding["source"].startswith("http"), \
-                f"Found fabricated URL: {finding['source']}"
+            assert not finding["source"].startswith("http"), f"Found fabricated URL: {finding['source']}"
             assert finding["source"] == "llm_knowledge"
 
 
 # ============================================================
 # stages/synthesize.py
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_synthesize_stage(mock_router, mock_config):
@@ -286,6 +297,7 @@ async def test_synthesize_stage(mock_router, mock_config):
 # stages/artifact.py
 # ============================================================
 
+
 @pytest.mark.asyncio
 async def test_artifact_stage_pptx(mock_router, mock_config, tmp_path):
     mock_config.output.dir = str(tmp_path)
@@ -307,6 +319,7 @@ async def test_artifact_stage_pptx(mock_router, mock_config, tmp_path):
     assert result.data["artifact_type"] == "pptx"
     assert result.data["file_path"].endswith(".pptx")
     from pathlib import Path
+
     assert Path(result.data["file_path"]).exists()
 
 
@@ -331,6 +344,7 @@ async def test_artifact_stage_md(mock_router, mock_config, tmp_path):
     assert result.success
     assert result.data["artifact_type"] == "md"
     from pathlib import Path
+
     assert Path(result.data["file_path"]).exists()
 
 
@@ -351,6 +365,7 @@ def test_safe_filename_accented():
 # ============================================================
 # stages/synthesize.py — Tone & Visual injection
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_synthesize_tone_from_style(mock_router, mock_config):

@@ -22,6 +22,7 @@ USER_AGENT = "Mozilla/5.0 (compatible; schulpipeline/0.1)"
 @dataclass
 class SearchResult:
     """A single search result with extracted text."""
+
     url: str
     title: str
     snippet: str
@@ -114,15 +115,18 @@ def _ddg_search(query: str, max_results: int = 5) -> list[dict[str, str]]:
         # DDG wraps URLs — extract the actual URL
         if "uddg=" in url:
             from urllib.parse import parse_qs, urlparse
+
             parsed = urlparse(url)
             actual = parse_qs(parsed.query).get("uddg", [""])[0]
             url = actual
 
-        results.append({
-            "title": title_el.get_text(strip=True),
-            "url": url,
-            "snippet": snippet_el.get_text(strip=True) if snippet_el else "",
-        })
+        results.append(
+            {
+                "title": title_el.get_text(strip=True),
+                "url": url,
+                "snippet": snippet_el.get_text(strip=True) if snippet_el else "",
+            }
+        )
 
     logger.debug(f"DDG: '{query}' → {len(results)} results")
     return results
@@ -196,20 +200,24 @@ async def search_and_extract(
         text = await asyncio.to_thread(_scrape_page, url)
         quality = _assess_quality(text, raw["snippet"])
 
-        results.append(SearchResult(
-            url=url,
-            title=raw["title"],
-            snippet=raw["snippet"],
-            text=text,
-            quality=quality,
-        ))
+        results.append(
+            SearchResult(
+                url=url,
+                title=raw["title"],
+                snippet=raw["snippet"],
+                text=text,
+                quality=quality,
+            )
+        )
 
     # Cache results
     if cache and results:
-        cache.put(query, [
-            {"url": r.url, "title": r.title, "snippet": r.snippet,
-             "text": r.text, "quality": r.quality}
-            for r in results
-        ])
+        cache.put(
+            query,
+            [
+                {"url": r.url, "title": r.title, "snippet": r.snippet, "text": r.text, "quality": r.quality}
+                for r in results
+            ],
+        )
 
     return results

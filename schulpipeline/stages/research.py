@@ -56,6 +56,7 @@ class ResearchStage(BaseStage):
     :rtype: dict[str, Any]
     :raises ValueError: If required context keys are missing.
     """
+
     name = "research"
     spec_path = "specs/research.json"
     required_context = frozenset({"plan", "intake"})
@@ -169,11 +170,13 @@ class ResearchStage(BaseStage):
                 search_results = await search_and_extract(query, max_results=2, cache=cache)
                 for sr in search_results:
                     if sr.quality in ("high", "medium"):
-                        findings.append({
-                            "content": sr.text[:500],
-                            "source": sr.url,
-                            "relevance": 0.7,
-                        })
+                        findings.append(
+                            {
+                                "content": sr.text[:500],
+                                "source": sr.url,
+                                "relevance": 0.7,
+                            }
+                        )
                 await asyncio.sleep(config.research.request_delay)
 
             if findings:

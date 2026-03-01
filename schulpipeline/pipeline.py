@@ -36,6 +36,7 @@ class PipelineResult:
     :param elapsed_ms: The time taken to execute the pipeline in milliseconds.
     :type elapsed_ms: int
     """
+
     success: bool
     results: list[StageResult] = field(default_factory=list)
     output_path: str | None = None
@@ -88,10 +89,7 @@ class Pipeline:
             on_progress: Optional callback(event, stage_name, stage_index, total_stages, **kw).
         """
         if self.router is None:
-            raise RuntimeError(
-                "Pipeline.run() requires a router. "
-                "Pass router=BackendRouter(config) to Pipeline()."
-            )
+            raise RuntimeError("Pipeline.run() requires a router. Pass router=BackendRouter(config) to Pipeline().")
         t0 = time.monotonic()
         context: dict[str, Any] = {"raw_input": raw_input}
         if preset:
@@ -106,6 +104,7 @@ class Pipeline:
 
         # Resolve style and visual configuration
         from .styles import resolve_style, resolve_visual_config
+
         context["style"] = resolve_style(self.config, overrides)
         context["visual_slots"] = resolve_visual_config(self.config, overrides)
 
@@ -140,8 +139,14 @@ class Pipeline:
                 elapsed = int((time.monotonic() - t0) * 1000)
                 logger.error(f"Stage '{stage_name}' failed: {result.errors}")
                 if on_progress:
-                    on_progress("stage_error", stage_name, i, total_stages,
-                                elapsed_ms=result.metadata.get("elapsed_ms", 0), errors=result.errors)
+                    on_progress(
+                        "stage_error",
+                        stage_name,
+                        i,
+                        total_stages,
+                        elapsed_ms=result.metadata.get("elapsed_ms", 0),
+                        errors=result.errors,
+                    )
                 return PipelineResult(
                     success=False,
                     results=results,
@@ -185,12 +190,9 @@ class Pipeline:
             context[stage_name] = result.data
 
             if on_progress:
-                on_progress("stage_done", stage_name, i, total_stages,
-                            elapsed_ms=result.metadata.get("elapsed_ms", 0))
+                on_progress("stage_done", stage_name, i, total_stages, elapsed_ms=result.metadata.get("elapsed_ms", 0))
 
-            logger.info(
-                f"Stage '{stage_name}' completed in {result.metadata.get('elapsed_ms', '?')}ms"
-            )
+            logger.info(f"Stage '{stage_name}' completed in {result.metadata.get('elapsed_ms', '?')}ms")
 
         elapsed = int((time.monotonic() - t0) * 1000)
         output_path = results[-1].data.get("file_path") if results else None
@@ -207,13 +209,16 @@ class Pipeline:
             elapsed_ms=elapsed,
         )
 
-    async def plan_only(self, raw_input: str | Path, preset: Any = None, overrides: dict | None = None) -> PipelineResult:
+    async def plan_only(
+        self, raw_input: str | Path, preset: Any = None, overrides: dict | None = None
+    ) -> PipelineResult:
         """Run only intake + plan stages (dry run)."""
         context: dict[str, Any] = {"raw_input": raw_input}
         if preset:
             context["preset"] = preset
 
         from .styles import resolve_style, resolve_visual_config
+
         context["style"] = resolve_style(self.config, overrides)
         context["visual_slots"] = resolve_visual_config(self.config, overrides)
         results: list[StageResult] = []

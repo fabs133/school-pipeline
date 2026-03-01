@@ -1,4 +1,5 @@
 """Convert synthesis stage output to slideforge Presentation model."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -12,19 +13,19 @@ if TYPE_CHECKING:
 
 # Maps SlideTypeSpec.key → slideforge layout name
 _SPEC_TO_LAYOUT: dict[str, str] = {
-    "title":         "SP_Title",
-    "intro":         "SP_Intro",
-    "content":       "SP_Content",
-    "closing":       "SP_Closing",
-    "sources":       "SP_Sources",
+    "title": "SP_Title",
+    "intro": "SP_Intro",
+    "content": "SP_Content",
+    "closing": "SP_Closing",
+    "sources": "SP_Sources",
     "section_break": "SP_SectionBreak",
 }
 
 # Maps schulpipeline preset style → slideforge PresentationStyle
 _PRESET_STYLE_MAP: dict[str, PresentationStyle] = {
     "bullet-heavy": PresentationStyle.SENTENCES,
-    "compact":      PresentationStyle.SENTENCES,
-    "prose":        PresentationStyle.SENTENCES,
+    "compact": PresentationStyle.SENTENCES,
+    "prose": PresentationStyle.SENTENCES,
 }
 
 
@@ -78,12 +79,14 @@ def synthesis_to_presentation(
             else:
                 body = content
 
-        slides.append(Slide(
-            layout=layout,
-            title=heading or title,
-            body=body,
-            notes=section.get("speaker_notes", "") or "",
-        ))
+        slides.append(
+            Slide(
+                layout=layout,
+                title=heading or title,
+                body=body,
+                notes=section.get("speaker_notes", "") or "",
+            )
+        )
 
     # Resolve presentation style
     if style:

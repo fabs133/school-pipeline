@@ -71,6 +71,7 @@ class IntakeStage(BaseStage):
     :return: A dictionary with processed data.
     :rtype: dict[str, Any]
     """
+
     name = "intake"
     spec_path = "specs/intake.json"
     required_context = frozenset({"raw_input"})

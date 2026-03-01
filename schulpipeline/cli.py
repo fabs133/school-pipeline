@@ -23,6 +23,7 @@ from .presets import (
 
 # --- Encoding-safe output helpers ---
 
+
 def _supports_unicode() -> bool:
     """Check if stdout can handle Unicode output."""
     try:
@@ -125,10 +126,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--no-visuals", action="store_true", help="Keine visuellen Platzhalter")
     run_p.add_argument("--visual-placement", choices=["right", "center"], help="Platzierung der Visuals")
     run_p.add_argument("--yes", "-y", action="store_true", help="Kosten-Warnung überspringen")
-    run_p.add_argument("--agent", choices=["local_llm"],
-                       help="Code-Generierungs-Agent (nur fuer Coding-Presets)")
-    run_p.add_argument("--review", action="store_true",
-                       help="Folien vor Erstellung im Browser bearbeiten")
+    run_p.add_argument("--agent", choices=["local_llm"], help="Code-Generierungs-Agent (nur fuer Coding-Presets)")
+    run_p.add_argument("--review", action="store_true", help="Folien vor Erstellung im Browser bearbeiten")
 
     # --- resume ---
     resume_p = subparsers.add_parser("resume", help="Letzte/bestimmte Session fortsetzen")
@@ -184,12 +183,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- purge ---
     purge_p = subparsers.add_parser("purge", help="Alte Sessions entfernen")
-    purge_p.add_argument("--max-age", type=int, default=30,
-                         help="Maximales Alter in Tagen (Standard: 30)")
-    purge_p.add_argument("--max-count", type=int, default=50,
-                         help="Maximale Anzahl Sessions (Standard: 50)")
-    purge_p.add_argument("--dry-run", action="store_true",
-                         help="Zeige was geloescht wuerde, ohne zu loeschen")
+    purge_p.add_argument("--max-age", type=int, default=30, help="Maximales Alter in Tagen (Standard: 30)")
+    purge_p.add_argument("--max-count", type=int, default=50, help="Maximale Anzahl Sessions (Standard: 50)")
+    purge_p.add_argument("--dry-run", action="store_true", help="Zeige was geloescht wuerde, ohne zu loeschen")
 
     # --- doctor ---
     subparsers.add_parser("doctor", help="System-Diagnose: Umgebung, Keys, Backends prüfen")
@@ -329,7 +325,9 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
     runner = SessionRunner(store, pipeline, router)
 
     try:
-        session = await runner.run(session, preset=preset, overrides=style_overrides or None, on_progress=_progress_printer)
+        session = await runner.run(
+            session, preset=preset, overrides=style_overrides or None, on_progress=_progress_printer
+        )
     finally:
         await router.close()
 
@@ -341,7 +339,8 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
 
             synth_data = session.stage_data.get("synthesize", {})
             presentation = synthesis_to_presentation(
-                synth_data, preset=preset,
+                synth_data,
+                preset=preset,
                 name=synth_data.get("title", "Review"),
             )
             edited = run_review(presentation)
@@ -664,24 +663,24 @@ def cmd_presets(args) -> int:
         print(_json_dumps(list_presets(), indent=2))
         return 0
 
-    print(f"{SYM_DLINE*3} Was soll rauskommen? (--output-type) {SYM_DLINE*3}\n")
+    print(f"{SYM_DLINE * 3} Was soll rauskommen? (--output-type) {SYM_DLINE * 3}\n")
     for key, preset in OUTPUT_PRESETS.items():
         print(f"  {key:25s} {preset.label:30s} → .{preset.format}")
 
-    print(f"\n{SYM_DLINE*3} Welches Fach? (--subject) {SYM_DLINE*3}\n")
+    print(f"\n{SYM_DLINE * 3} Welches Fach? (--subject) {SYM_DLINE * 3}\n")
     for key, preset in SUBJECT_PRESETS.items():
         print(f"  {key:25s} {preset.label:30s} [{preset.difficulty}]")
 
-    print(f"\n{SYM_DLINE*3} Quick-Presets (--preset) {SYM_DLINE*3}\n")
+    print(f"\n{SYM_DLINE * 3} Quick-Presets (--preset) {SYM_DLINE * 3}\n")
     for key, (out_key, sub_key) in sorted(QUICK_PRESETS.items()):
         out_label = OUTPUT_PRESETS[out_key].label
         sub_label = SUBJECT_PRESETS[sub_key].label
         print(f"  {key:30s} {out_label} → {sub_label}")
 
-    print(f"\n{SYM_DLINE*3} Beispiele {SYM_DLINE*3}\n")
+    print(f"\n{SYM_DLINE * 3} Beispiele {SYM_DLINE * 3}\n")
     print('  schulpipeline run --preset fiae-praesi-itsec "IT-Sicherheit im Unternehmen"')
     print('  schulpipeline run --output-type praesentation --subject netzwerktechnik "OSI-Modell"')
-    print('  schulpipeline run --subject wirtschaft --input aufgaben.jpg')
+    print("  schulpipeline run --subject wirtschaft --input aufgaben.jpg")
     print('  schulpipeline run --preset fiae-aufgaben-prog "Stack vs Heap?"')
     return 0
 
@@ -722,6 +721,7 @@ def cmd_scan(args) -> int:
         if out_path.suffix in (".yaml", ".yml"):
             try:
                 import yaml
+
                 out_path.write_text(yaml.dump(manifest, allow_unicode=True, default_flow_style=False), encoding="utf-8")
             except ImportError:
                 print("Fehler: pyyaml benötigt für YAML-Ausgabe", file=sys.stderr)
@@ -775,11 +775,20 @@ async def cmd_doctor(config) -> int:
     # 2. Dependencies
     print("Dependencies:")
     deps = [
-        "requests", "yaml", "jsonschema", "pptx", "docx", "bs4", "PIL",
+        "requests",
+        "yaml",
+        "jsonschema",
+        "pptx",
+        "docx",
+        "bs4",
+        "PIL",
     ]
     dep_names = {
-        "yaml": "pyyaml", "pptx": "python-pptx", "docx": "python-docx",
-        "bs4": "beautifulsoup4", "PIL": "Pillow",
+        "yaml": "pyyaml",
+        "pptx": "python-pptx",
+        "docx": "python-docx",
+        "bs4": "beautifulsoup4",
+        "PIL": "Pillow",
     }
     all_ok = True
     for dep in deps:
@@ -796,6 +805,7 @@ async def cmd_doctor(config) -> int:
     import os
 
     from .config import ENV_KEY_MAP
+
     keys_found = 0
     for backend_name, env_var in ENV_KEY_MAP.items():
         val = os.environ.get(env_var, "")
@@ -890,6 +900,7 @@ def main() -> None:
     # Load .env file into os.environ (API keys etc.)
     try:
         from dotenv import load_dotenv
+
         load_dotenv()
     except ImportError:
         pass
@@ -910,6 +921,7 @@ def main() -> None:
     # Validate config for commands that need working backends
     if args.command in ("run", "plan", "resume", "cost-estimate"):
         from .config import validate_config
+
         config_errors = validate_config(config)
         if config_errors:
             for err in config_errors:

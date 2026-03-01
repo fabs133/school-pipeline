@@ -13,6 +13,7 @@ from schulpipeline.backends.router import BACKEND_FACTORIES
 
 # --- LLMResponse ---
 
+
 def test_llm_response_defaults():
     r = LLMResponse(content="hello", model="test")
     assert r.content == "hello"
@@ -39,6 +40,7 @@ def test_llm_response_full():
 
 # --- Error hierarchy ---
 
+
 def test_backend_error_properties():
     e = BackendError("test failure", "groq", retryable=True)
     assert str(e) == "test failure"
@@ -61,11 +63,13 @@ def test_rate_limit_error_inherits():
 
 # --- Backend Protocol ---
 
+
 def test_mock_backend_satisfies_protocol(mock_backend):
     assert isinstance(mock_backend, Backend)
 
 
 # --- Factory functions ---
+
 
 def test_create_groq():
     b = create_groq("test-key")
@@ -106,16 +110,16 @@ def test_create_gemini():
 
 # --- OpenAI-compatible headers ---
 
+
 def test_openai_compat_headers():
-    b = OpenAICompatibleBackend(
-        name="test", api_key="sk-abc123", model="m", base_url="http://x"
-    )
+    b = OpenAICompatibleBackend(name="test", api_key="sk-abc123", model="m", base_url="http://x")
     h = b._headers()
     assert h["Authorization"] == "Bearer sk-abc123"
     assert h["Content-Type"] == "application/json"
 
 
 # --- Cost estimation ---
+
 
 def test_openai_compat_cost_estimation():
     b = create_openai("key")
@@ -126,6 +130,7 @@ def test_openai_compat_cost_estimation():
 
 
 # --- Ollama backend ---
+
 
 def test_create_ollama():
     b = create_ollama()

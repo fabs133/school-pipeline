@@ -14,9 +14,7 @@ async def test_full_pipeline_text_to_pptx(mock_config, mock_router, tmp_path):
     mock_config.output.dir = str(tmp_path)
 
     pipeline = Pipeline(mock_config, mock_router)
-    result = await pipeline.run(
-        "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit mindestens 8 Folien."
-    )
+    result = await pipeline.run("Erstellen Sie eine Präsentation zum Thema IT-Sicherheit mit mindestens 8 Folien.")
 
     assert result.success, f"Pipeline failed: {result.failed_stage}, errors: {result.validation_errors}"
     assert result.output_path is not None
@@ -48,8 +46,24 @@ async def test_full_pipeline_text_to_md(mock_config, mock_router, tmp_path):
         "Aufgaben-Parser": json.dumps(intake_data),
         "Planungsassistent": json.dumps(plan_data),
         # Synthesize will use the "Aufgaben-Löser" default
-        "Aufgaben-Löser": DEFAULT_STAGE_RESPONSES.get("Präsentations-Autor",
-            json.dumps({"title": "Test", "sections": [{"section_id": "s1", "heading": "Test", "content": "Test content", "bullet_points": [], "speaker_notes": None}], "sources": []})),
+        "Aufgaben-Löser": DEFAULT_STAGE_RESPONSES.get(
+            "Präsentations-Autor",
+            json.dumps(
+                {
+                    "title": "Test",
+                    "sections": [
+                        {
+                            "section_id": "s1",
+                            "heading": "Test",
+                            "content": "Test content",
+                            "bullet_points": [],
+                            "speaker_notes": None,
+                        }
+                    ],
+                    "sources": [],
+                }
+            ),
+        ),
     }
 
     pipeline = Pipeline(mock_config, mock_router)
@@ -63,9 +77,7 @@ async def test_full_pipeline_text_to_md(mock_config, mock_router, tmp_path):
 async def test_plan_only(mock_config, mock_router):
     """Dry run returns plan without running full pipeline."""
     pipeline = Pipeline(mock_config, mock_router)
-    result = await pipeline.plan_only(
-        "Erstellen Sie eine Präsentation zum Thema Netzwerktechnik."
-    )
+    result = await pipeline.plan_only("Erstellen Sie eine Präsentation zum Thema Netzwerktechnik.")
 
     assert result.success
     assert len(result.results) == 2  # intake + plan only
@@ -128,9 +140,7 @@ async def test_pipeline_cascade_fallback(mock_config, cascade_router, tmp_path):
     mock_config.output.dir = str(tmp_path)
 
     pipeline = Pipeline(mock_config, cascade_router)
-    result = await pipeline.run(
-        "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit"
-    )
+    result = await pipeline.run("Erstellen Sie eine Präsentation zum Thema IT-Sicherheit")
 
     assert result.success, f"Failed: {result.failed_stage}, {result.validation_errors}"
     assert len(result.results) == 5
@@ -162,9 +172,7 @@ async def test_pipeline_tracks_cost(mock_config, mock_router, tmp_path):
     mock_config.output.dir = str(tmp_path)
 
     pipeline = Pipeline(mock_config, mock_router)
-    result = await pipeline.run(
-        "Erstellen Sie eine Präsentation zum Thema IT-Sicherheit"
-    )
+    result = await pipeline.run("Erstellen Sie eine Präsentation zum Thema IT-Sicherheit")
 
     assert result.success
     assert result.total_cost_usd >= 0.0

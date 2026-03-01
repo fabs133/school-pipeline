@@ -10,6 +10,7 @@ from typing import Any, Protocol, runtime_checkable
 
 try:
     import jsonschema
+
     HAS_JSONSCHEMA = True
 except ImportError:
     HAS_JSONSCHEMA = False

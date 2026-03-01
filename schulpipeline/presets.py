@@ -22,15 +22,17 @@ from typing import Any
 # Output Types — "Was soll rauskommen?"
 # ============================================================
 
+
 @dataclass(frozen=True)
 class OutputPreset:
     """Defines what the final artifact looks like."""
+
     key: str
-    label: str                           # Student-facing name
-    format: str                          # pptx | docx | md
-    default_section_count: int           # slides or chapters
-    structure: list[str]                 # expected section types
-    style: str                           # bullet-heavy, prose, compact
+    label: str  # Student-facing name
+    format: str  # pptx | docx | md
+    default_section_count: int  # slides or chapters
+    structure: list[str]  # expected section types
+    style: str  # bullet-heavy, prose, compact
     constraints: dict[str, Any] = field(default_factory=dict)
 
 
@@ -64,7 +66,6 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
             "sources_required": True,
         },
     ),
-
     # --- Dokument / Ausarbeitung ---
     "ausarbeitung": OutputPreset(
         key="ausarbeitung",
@@ -92,14 +93,13 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
             "sources_required": True,
         },
     ),
-
     # --- Aufgaben beantworten ---
     "aufgaben": OutputPreset(
         key="aufgaben",
         label="Aufgaben beantworten",
         format="md",
         default_section_count=0,  # dynamic — one per question
-        structure=[],             # dynamic
+        structure=[],  # dynamic
         style="compact",
         constraints={
             "direct_answers": True,
@@ -120,7 +120,6 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
             "sources_required": False,
         },
     ),
-
     # --- Sonstige ---
     "essay": OutputPreset(
         key="essay",
@@ -147,12 +146,11 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
             "sources_required": False,
         },
     ),
-
     # --- Coding-Projekte ---
     "projekt": OutputPreset(
         key="projekt",
         label="Coding-Projekt",
-        format="project",                # Special: triggers agent dispatch
+        format="project",  # Special: triggers agent dispatch
         default_section_count=5,
         structure=["setup", "module", "module", "module", "tests"],
         style="technical",
@@ -160,7 +158,7 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
             "include_tests": True,
             "include_readme": True,
             "include_config": True,
-            "agent_mode": True,           # Signals artifact stage to use agents
+            "agent_mode": True,  # Signals artifact stage to use agents
         },
     ),
     "projekt_einfach": OutputPreset(
@@ -178,13 +176,12 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
             "max_files": 5,
         },
     ),
-
     # --- Arbeitsblätter ---
     "arbeitsblatt": OutputPreset(
         key="arbeitsblatt",
         label="Arbeitsblatt ausfüllen",
-        format="worksheet",              # Special: triggers decompose → solve flow
-        default_section_count=0,          # Dynamic — depends on task count
+        format="worksheet",  # Special: triggers decompose → solve flow
+        default_section_count=0,  # Dynamic — depends on task count
         structure=[],
         style="mirror_input",
         constraints={
@@ -207,12 +204,11 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
             "german_number_format": True,
         },
     ),
-
     # --- Vorlagen / Templates ---
     "vorlage": OutputPreset(
         key="vorlage",
         label="Vorlage ausfüllen",
-        format="template_fill",           # Special: triggers classify → fill flow
+        format="template_fill",  # Special: triggers classify → fill flow
         default_section_count=0,
         structure=[],
         style="preserve_original",
@@ -231,16 +227,15 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
         constraints={
             "template_mode": True,
             "preserve_layout": True,
-            "max_pages": 1,               # DIN A4 constraint
+            "max_pages": 1,  # DIN A4 constraint
             "formal_language": True,
         },
     ),
-
     # --- Audit ---
     "audit": OutputPreset(
         key="audit",
         label="Vorgaben-Audit",
-        format="audit",                   # Special: classify → audit only
+        format="audit",  # Special: classify → audit only
         default_section_count=0,
         structure=[],
         style="formal",
@@ -251,7 +246,7 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
     "anforderungen": OutputPreset(
         key="anforderungen",
         label="Anforderungsdokumentation",
-        format="requirements_report",     # Special: full A/B/C report
+        format="requirements_report",  # Special: full A/B/C report
         default_section_count=0,
         structure=[],
         style="formal",
@@ -266,15 +261,17 @@ OUTPUT_PRESETS: dict[str, OutputPreset] = {
 # Subjects — "Welches Fach?"
 # ============================================================
 
+
 @dataclass(frozen=True)
 class SubjectPreset:
     """Domain context that tunes prompts and research."""
+
     key: str
     label: str
-    domain_context: str              # injected into system prompts
-    vocabulary_hints: list[str]      # domain-specific terms the LLM should use
-    research_bias: str               # what kind of sources to prefer
-    difficulty: str                  # berufsschule | gymnasium | uni
+    domain_context: str  # injected into system prompts
+    vocabulary_hints: list[str]  # domain-specific terms the LLM should use
+    research_bias: str  # what kind of sources to prefer
+    difficulty: str  # berufsschule | gymnasium | uni
     language: str = "de"
 
 
@@ -284,10 +281,19 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="it_sicherheit",
         label="IT-Sicherheit",
         domain_context="Berufsschule Fachinformatiker Anwendungsentwicklung. "
-                       "Themenbereich IT-Sicherheit: Schutzziele, Bedrohungen, Maßnahmen, "
-                       "BSI-Grundschutz, Kryptographie, Netzwerksicherheit.",
-        vocabulary_hints=["CIA-Triad", "BSI", "Firewall", "VPN", "Ransomware", "Phishing",
-                          "Penetrationstest", "DSGVO", "ISO 27001"],
+        "Themenbereich IT-Sicherheit: Schutzziele, Bedrohungen, Maßnahmen, "
+        "BSI-Grundschutz, Kryptographie, Netzwerksicherheit.",
+        vocabulary_hints=[
+            "CIA-Triad",
+            "BSI",
+            "Firewall",
+            "VPN",
+            "Ransomware",
+            "Phishing",
+            "Penetrationstest",
+            "DSGVO",
+            "ISO 27001",
+        ],
         research_bias="BSI, OWASP, Heise Security, ct-Magazin",
         difficulty="berufsschule",
     ),
@@ -295,10 +301,20 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="netzwerktechnik",
         label="Netzwerktechnik",
         domain_context="Berufsschule Fachinformatiker Anwendungsentwicklung. "
-                       "Themenbereich Netzwerktechnik: OSI-Modell, TCP/IP, Routing, "
-                       "Switching, VLAN, Subnetting, DNS, DHCP.",
-        vocabulary_hints=["OSI-Modell", "TCP/IP", "Subnetting", "VLAN", "Router", "Switch",
-                          "DNS", "DHCP", "NAT", "Gateway"],
+        "Themenbereich Netzwerktechnik: OSI-Modell, TCP/IP, Routing, "
+        "Switching, VLAN, Subnetting, DNS, DHCP.",
+        vocabulary_hints=[
+            "OSI-Modell",
+            "TCP/IP",
+            "Subnetting",
+            "VLAN",
+            "Router",
+            "Switch",
+            "DNS",
+            "DHCP",
+            "NAT",
+            "Gateway",
+        ],
         research_bias="Cisco, Heise Netze, Elektronik-Kompendium",
         difficulty="berufsschule",
     ),
@@ -306,10 +322,9 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="programmierung",
         label="Programmierung / Softwareentwicklung",
         domain_context="Berufsschule Fachinformatiker Anwendungsentwicklung. "
-                       "Themenbereich Softwareentwicklung: OOP, Design Patterns, "
-                       "Versionskontrolle, Testing, Datenbanken, Agile Methoden.",
-        vocabulary_hints=["OOP", "SOLID", "Git", "Unit Test", "UML", "SQL", "REST API",
-                          "Scrum", "Kanban", "CI/CD"],
+        "Themenbereich Softwareentwicklung: OOP, Design Patterns, "
+        "Versionskontrolle, Testing, Datenbanken, Agile Methoden.",
+        vocabulary_hints=["OOP", "SOLID", "Git", "Unit Test", "UML", "SQL", "REST API", "Scrum", "Kanban", "CI/CD"],
         research_bias="MDN, Stack Overflow, Clean Code (Robert C. Martin)",
         difficulty="berufsschule",
     ),
@@ -317,10 +332,19 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="datenbanken",
         label="Datenbanken",
         domain_context="Berufsschule Fachinformatiker Anwendungsentwicklung. "
-                       "Themenbereich Datenbanken: ER-Modell, Normalisierung, SQL, "
-                       "Transaktionen, NoSQL, Datenbankdesign.",
-        vocabulary_hints=["ER-Modell", "Normalisierung", "SQL", "JOIN", "PRIMARY KEY",
-                          "FOREIGN KEY", "ACID", "NoSQL", "Index"],
+        "Themenbereich Datenbanken: ER-Modell, Normalisierung, SQL, "
+        "Transaktionen, NoSQL, Datenbankdesign.",
+        vocabulary_hints=[
+            "ER-Modell",
+            "Normalisierung",
+            "SQL",
+            "JOIN",
+            "PRIMARY KEY",
+            "FOREIGN KEY",
+            "ACID",
+            "NoSQL",
+            "Index",
+        ],
         research_bias="W3Schools SQL, Elektronik-Kompendium, PostgreSQL Docs",
         difficulty="berufsschule",
     ),
@@ -328,10 +352,19 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="wirtschaft",
         label="Wirtschaft / Geschäftsprozesse",
         domain_context="Berufsschule Fachinformatiker Anwendungsentwicklung. "
-                       "Themenbereich Wirtschaft und Geschäftsprozesse: BWL-Grundlagen, "
-                       "Kostenrechnung, Vertragsrecht, Projektmanagement, Marketing.",
-        vocabulary_hints=["Angebot/Nachfrage", "Deckungsbeitrag", "Fixkosten", "Variable Kosten",
-                          "BGB", "HGB", "Gewährleistung", "Lastenheft", "Pflichtenheft"],
+        "Themenbereich Wirtschaft und Geschäftsprozesse: BWL-Grundlagen, "
+        "Kostenrechnung, Vertragsrecht, Projektmanagement, Marketing.",
+        vocabulary_hints=[
+            "Angebot/Nachfrage",
+            "Deckungsbeitrag",
+            "Fixkosten",
+            "Variable Kosten",
+            "BGB",
+            "HGB",
+            "Gewährleistung",
+            "Lastenheft",
+            "Pflichtenheft",
+        ],
         research_bias="IHK, Gabler Wirtschaftslexikon, BWL-Lehrbücher",
         difficulty="berufsschule",
     ),
@@ -339,10 +372,18 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="politik",
         label="Politik / Sozialkunde",
         domain_context="Berufsschule. Themenbereich Politik und Gesellschaft: "
-                       "Grundgesetz, Staatsaufbau, Sozialversicherung, EU, "
-                       "Arbeitsrecht, Tarifverträge, Betriebsrat.",
-        vocabulary_hints=["Grundgesetz", "Bundestag", "Bundesrat", "Sozialversicherung",
-                          "Tarifvertrag", "Betriebsrat", "EU-Vertrag", "Gewaltenteilung"],
+        "Grundgesetz, Staatsaufbau, Sozialversicherung, EU, "
+        "Arbeitsrecht, Tarifverträge, Betriebsrat.",
+        vocabulary_hints=[
+            "Grundgesetz",
+            "Bundestag",
+            "Bundesrat",
+            "Sozialversicherung",
+            "Tarifvertrag",
+            "Betriebsrat",
+            "EU-Vertrag",
+            "Gewaltenteilung",
+        ],
         research_bias="bpb, Bundeszentrale für politische Bildung, Tagesschau",
         difficulty="berufsschule",
     ),
@@ -350,22 +391,26 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="englisch",
         label="Englisch (IT-Kontext)",
         domain_context="Berufsschule Fachinformatiker. Englisch im IT-Kontext: "
-                       "Technical writing, IT vocabulary, business communication.",
-        vocabulary_hints=["deploy", "implement", "requirements", "stakeholder",
-                          "deadline", "sprint", "ticket"],
+        "Technical writing, IT vocabulary, business communication.",
+        vocabulary_hints=["deploy", "implement", "requirements", "stakeholder", "deadline", "sprint", "ticket"],
         research_bias="Cambridge Dictionary, IT-specific glossaries",
         difficulty="berufsschule",
         language="en",
     ),
-
     # === Allgemein (Gymnasium / andere Schulformen) ===
     "informatik": SubjectPreset(
         key="informatik",
         label="Informatik (allgemein)",
         domain_context="Schulfach Informatik: Algorithmen, Datenstrukturen, "
-                       "Programmierung, Automatentheorie, Kryptographie.",
-        vocabulary_hints=["Algorithmus", "Datenstruktur", "Komplexität", "Automat",
-                          "Verschlüsselung", "Sortierverfahren"],
+        "Programmierung, Automatentheorie, Kryptographie.",
+        vocabulary_hints=[
+            "Algorithmus",
+            "Datenstruktur",
+            "Komplexität",
+            "Automat",
+            "Verschlüsselung",
+            "Sortierverfahren",
+        ],
         research_bias="Informatik-Lehrbücher, Khan Academy, CS50",
         difficulty="gymnasium",
     ),
@@ -373,8 +418,7 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="mathematik",
         label="Mathematik",
         domain_context="Schulfach Mathematik: Analysis, Algebra, Stochastik, Geometrie.",
-        vocabulary_hints=["Ableitung", "Integral", "Wahrscheinlichkeit", "Matrix",
-                          "Vektor", "Funktion", "Grenzwert"],
+        vocabulary_hints=["Ableitung", "Integral", "Wahrscheinlichkeit", "Matrix", "Vektor", "Funktion", "Grenzwert"],
         research_bias="Mathematik-Lehrbücher, Serlo, Mathebibel",
         difficulty="gymnasium",
     ),
@@ -382,23 +426,19 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
         key="deutsch",
         label="Deutsch",
         domain_context="Schulfach Deutsch: Literaturanalyse, Erörterung, Textanalyse, "
-                       "Grammatik, Epochen der Literatur.",
-        vocabulary_hints=["Stilmittel", "Epoche", "Erzählperspektive", "These",
-                          "Argumentation", "Interpretation"],
+        "Grammatik, Epochen der Literatur.",
+        vocabulary_hints=["Stilmittel", "Epoche", "Erzählperspektive", "These", "Argumentation", "Interpretation"],
         research_bias="Reclam, Lektürehilfen, Deutschunterricht-Materialien",
         difficulty="gymnasium",
     ),
     "geschichte": SubjectPreset(
         key="geschichte",
         label="Geschichte",
-        domain_context="Schulfach Geschichte: Epochen, Quellenanalyse, "
-                       "politische und soziale Zusammenhänge.",
-        vocabulary_hints=["Quelle", "Epoche", "Kausalität", "Perspektive",
-                          "Primärquelle", "Sekundärquelle"],
+        domain_context="Schulfach Geschichte: Epochen, Quellenanalyse, politische und soziale Zusammenhänge.",
+        vocabulary_hints=["Quelle", "Epoche", "Kausalität", "Perspektive", "Primärquelle", "Sekundärquelle"],
         research_bias="bpb, Geschichtslehrbücher, LeMO (Deutsches Historisches Museum)",
         difficulty="gymnasium",
     ),
-
     # === Frei / Custom ===
     "custom": SubjectPreset(
         key="custom",
@@ -414,6 +454,7 @@ SUBJECT_PRESETS: dict[str, SubjectPreset] = {
 # ============================================================
 # Resolved Preset — what the pipeline actually receives
 # ============================================================
+
 
 @dataclass
 class ResolvedPreset:
@@ -519,17 +560,11 @@ def resolve_preset(
     """
     output = OUTPUT_PRESETS.get(output_key)
     if not output:
-        raise ValueError(
-            f"Unknown output preset '{output_key}'. "
-            f"Available: {', '.join(OUTPUT_PRESETS.keys())}"
-        )
+        raise ValueError(f"Unknown output preset '{output_key}'. Available: {', '.join(OUTPUT_PRESETS.keys())}")
 
     subject = SUBJECT_PRESETS.get(subject_key)
     if not subject:
-        raise ValueError(
-            f"Unknown subject preset '{subject_key}'. "
-            f"Available: {', '.join(SUBJECT_PRESETS.keys())}"
-        )
+        raise ValueError(f"Unknown subject preset '{subject_key}'. Available: {', '.join(SUBJECT_PRESETS.keys())}")
 
     overrides = overrides or {}
 
@@ -559,56 +594,49 @@ def resolve_preset(
 
 QUICK_PRESETS: dict[str, tuple[str, str]] = {
     # Fachinformatiker AE — die häufigsten Aufgaben
-    "fiae-praesi-itsec":     ("praesentation", "it_sicherheit"),
-    "fiae-praesi-netzwerk":  ("praesentation", "netzwerktechnik"),
-    "fiae-praesi-prog":      ("praesentation", "programmierung"),
-    "fiae-praesi-db":        ("praesentation", "datenbanken"),
-    "fiae-praesi-wirtschaft":("praesentation", "wirtschaft"),
-    "fiae-praesi-politik":   ("praesentation", "politik"),
-    "fiae-aufgaben-itsec":   ("aufgaben", "it_sicherheit"),
-    "fiae-aufgaben-netzwerk":("aufgaben", "netzwerktechnik"),
-    "fiae-aufgaben-prog":    ("aufgaben", "programmierung"),
-    "fiae-aufgaben-wirtschaft":("aufgaben", "wirtschaft"),
-    "fiae-handout-itsec":    ("handout", "it_sicherheit"),
-    "fiae-doku-prog":        ("ausarbeitung", "programmierung"),
-
+    "fiae-praesi-itsec": ("praesentation", "it_sicherheit"),
+    "fiae-praesi-netzwerk": ("praesentation", "netzwerktechnik"),
+    "fiae-praesi-prog": ("praesentation", "programmierung"),
+    "fiae-praesi-db": ("praesentation", "datenbanken"),
+    "fiae-praesi-wirtschaft": ("praesentation", "wirtschaft"),
+    "fiae-praesi-politik": ("praesentation", "politik"),
+    "fiae-aufgaben-itsec": ("aufgaben", "it_sicherheit"),
+    "fiae-aufgaben-netzwerk": ("aufgaben", "netzwerktechnik"),
+    "fiae-aufgaben-prog": ("aufgaben", "programmierung"),
+    "fiae-aufgaben-wirtschaft": ("aufgaben", "wirtschaft"),
+    "fiae-handout-itsec": ("handout", "it_sicherheit"),
+    "fiae-doku-prog": ("ausarbeitung", "programmierung"),
     # Fachinformatiker AE — Coding-Projekte
-    "fiae-projekt-prog":     ("projekt", "programmierung"),
-    "fiae-projekt-db":       ("projekt", "datenbanken"),
-    "fiae-projekt-web":      ("projekt", "programmierung"),
-    "fiae-script-prog":      ("projekt_einfach", "programmierung"),
-
+    "fiae-projekt-prog": ("projekt", "programmierung"),
+    "fiae-projekt-db": ("projekt", "datenbanken"),
+    "fiae-projekt-web": ("projekt", "programmierung"),
+    "fiae-script-prog": ("projekt_einfach", "programmierung"),
     # Fachinformatiker AE — Arbeitsblätter
-    "fiae-blatt-wirtschaft":  ("arbeitsblatt", "wirtschaft"),
-    "fiae-blatt-itsec":       ("arbeitsblatt", "it_sicherheit"),
-    "fiae-blatt-netzwerk":    ("arbeitsblatt", "netzwerktechnik"),
-    "fiae-blatt-prog":        ("arbeitsblatt", "programmierung"),
-    "fiae-blatt-db":          ("arbeitsblatt", "datenbanken"),
-    "fiae-blatt-politik":     ("arbeitsblatt", "politik"),
-
+    "fiae-blatt-wirtschaft": ("arbeitsblatt", "wirtschaft"),
+    "fiae-blatt-itsec": ("arbeitsblatt", "it_sicherheit"),
+    "fiae-blatt-netzwerk": ("arbeitsblatt", "netzwerktechnik"),
+    "fiae-blatt-prog": ("arbeitsblatt", "programmierung"),
+    "fiae-blatt-db": ("arbeitsblatt", "datenbanken"),
+    "fiae-blatt-politik": ("arbeitsblatt", "politik"),
     # Templates / Vorlagen
-    "fiae-vorlage-prog":      ("vorlage", "programmierung"),
-    "fiae-vorlage-itsec":     ("vorlage", "it_sicherheit"),
-    "fiae-projektantrag":     ("projektantrag", "programmierung"),
-    "fiae-audit":             ("audit", "programmierung"),
-    "fiae-anforderungen":     ("anforderungen", "programmierung"),
-
+    "fiae-vorlage-prog": ("vorlage", "programmierung"),
+    "fiae-vorlage-itsec": ("vorlage", "it_sicherheit"),
+    "fiae-projektantrag": ("projektantrag", "programmierung"),
+    "fiae-audit": ("audit", "programmierung"),
+    "fiae-anforderungen": ("anforderungen", "programmierung"),
     # Gymnasium — gängig
     "gym-praesi-informatik": ("praesentation", "informatik"),
     "gym-praesi-geschichte": ("praesentation", "geschichte"),
-    "gym-essay-deutsch":     ("essay", "deutsch"),
-    "gym-aufgaben-mathe":    ("aufgaben", "mathematik"),
-    "gym-projekt-informatik":("projekt", "informatik"),
+    "gym-essay-deutsch": ("essay", "deutsch"),
+    "gym-aufgaben-mathe": ("aufgaben", "mathematik"),
+    "gym-projekt-informatik": ("projekt", "informatik"),
 }
 
 
 def resolve_quick(quick_key: str, overrides: dict[str, Any] | None = None) -> ResolvedPreset:
     """Resolve a quick-access alias."""
     if quick_key not in QUICK_PRESETS:
-        raise ValueError(
-            f"Unknown quick preset '{quick_key}'. "
-            f"Available: {', '.join(sorted(QUICK_PRESETS.keys()))}"
-        )
+        raise ValueError(f"Unknown quick preset '{quick_key}'. Available: {', '.join(sorted(QUICK_PRESETS.keys()))}")
     output_key, subject_key = QUICK_PRESETS[quick_key]
     return resolve_preset(output_key, subject_key, overrides)
 
@@ -618,7 +646,12 @@ def list_presets() -> dict[str, Any]:
     return {
         "output_types": {k: {"label": v.label, "format": v.format} for k, v in OUTPUT_PRESETS.items()},
         "subjects": {k: {"label": v.label, "difficulty": v.difficulty} for k, v in SUBJECT_PRESETS.items()},
-        "quick": {k: {"output": v[0], "subject": v[1],
-                       "label": f"{OUTPUT_PRESETS[v[0]].label} → {SUBJECT_PRESETS[v[1]].label}"}
-                  for k, v in QUICK_PRESETS.items()},
+        "quick": {
+            k: {
+                "output": v[0],
+                "subject": v[1],
+                "label": f"{OUTPUT_PRESETS[v[0]].label} → {SUBJECT_PRESETS[v[1]].label}",
+            }
+            for k, v in QUICK_PRESETS.items()
+        },
     }

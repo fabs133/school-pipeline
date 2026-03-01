@@ -45,6 +45,7 @@ from typing import Any
 # Feedback Record — what we collect per run
 # ============================================================
 
+
 @dataclass
 class FeedbackRecord:
     """One feedback entry per pipeline run. This is the complete schema.
@@ -53,26 +54,26 @@ class FeedbackRecord:
     """
 
     # --- Run metadata (auto-collected) ---
-    run_id: str                      # Session ID (random, not traceable)
-    timestamp: str                   # ISO 8601 UTC
-    pipeline_flow: str               # "presentation" | "worksheet" | "template" | "audit" | "requirements"
-    preset_key: str                  # e.g. "fiae-praesi-itsec" (no custom text)
-    subject: str                     # e.g. "wirtschaft" (from preset, not from input)
-    output_format: str               # e.g. "pptx", "docx", "worksheet"
+    run_id: str  # Session ID (random, not traceable)
+    timestamp: str  # ISO 8601 UTC
+    pipeline_flow: str  # "presentation" | "worksheet" | "template" | "audit" | "requirements"
+    preset_key: str  # e.g. "fiae-praesi-itsec" (no custom text)
+    subject: str  # e.g. "wirtschaft" (from preset, not from input)
+    output_format: str  # e.g. "pptx", "docx", "worksheet"
 
     # --- Pipeline performance (auto-collected) ---
-    total_stages: int                # How many stages ran
-    failed_stages: int               # How many stages failed
-    total_cost_usd: float            # API cost (should be 0.00 for free tier)
-    elapsed_ms: int                  # Total pipeline duration
-    backends_used: list[str]         # Which backends were used (e.g. ["groq", "gemini"])
+    total_stages: int  # How many stages ran
+    failed_stages: int  # How many stages failed
+    total_cost_usd: float  # API cost (should be 0.00 for free tier)
+    elapsed_ms: int  # Total pipeline duration
+    backends_used: list[str]  # Which backends were used (e.g. ["groq", "gemini"])
 
     # --- Audit metrics (auto-collected, only for audit/requirements flows) ---
     audit_findings_total: int = 0
     audit_blockers: int = 0
     audit_warnings: int = 0
     audit_completeness: float = 0.0  # 0-1
-    audit_feasibility: float = 0.0   # 0-1
+    audit_feasibility: float = 0.0  # 0-1
     requirements_total: int = 0
     requirements_clear: int = 0
     requirements_ambiguous: int = 0
@@ -80,14 +81,14 @@ class FeedbackRecord:
     deviations_needed: int = 0
 
     # --- User feedback (user-provided) ---
-    grade_received: str = ""         # "1" through "6", or "pending", or ""
-    quality_rating: int = 0          # 1-5 stars, 0 = not rated
+    grade_received: str = ""  # "1" through "6", or "pending", or ""
+    quality_rating: int = 0  # 1-5 stars, 0 = not rated
     usable_without_edits: bool | None = None  # Could you submit this as-is?
     estimated_time_saved_min: int = 0  # How many minutes would this have taken manually?
-    feedback_text: str = ""          # Optional free-text (stored locally only, never exported)
+    feedback_text: str = ""  # Optional free-text (stored locally only, never exported)
 
     # --- Calculated fields ---
-    education_level: str = ""        # "berufsschule" | "gymnasium" | "uni" (from preset)
+    education_level: str = ""  # "berufsschule" | "gymnasium" | "uni" (from preset)
 
 
 @dataclass
@@ -96,6 +97,7 @@ class AggregateStats:
 
     This is what gets exported for research — no individual records.
     """
+
     total_runs: int = 0
     total_time_saved_min: int = 0
 
@@ -132,6 +134,7 @@ class AggregateStats:
 # ============================================================
 # Feedback Store — local JSON storage
 # ============================================================
+
 
 class FeedbackStore:
     """Manages feedback records on disk. All data in one directory."""
@@ -245,8 +248,7 @@ class FeedbackStore:
         rated = [r for r in records if r.quality_rating > 0]
         if rated:
             for r in rated:
-                stats.quality_distribution[r.quality_rating] = \
-                    stats.quality_distribution.get(r.quality_rating, 0) + 1
+                stats.quality_distribution[r.quality_rating] = stats.quality_distribution.get(r.quality_rating, 0) + 1
 
             # Average quality by flow
             by_flow: dict[str, list[int]] = {}
@@ -263,25 +265,20 @@ class FeedbackStore:
         # Usability
         usability_rated = [r for r in records if r.usable_without_edits is not None]
         if usability_rated:
-            stats.usable_without_edits_pct = (
-                sum(1 for r in usability_rated if r.usable_without_edits) /
-                len(usability_rated)
+            stats.usable_without_edits_pct = sum(1 for r in usability_rated if r.usable_without_edits) / len(
+                usability_rated
             )
 
         # Grades
         graded = [r for r in records if r.grade_received.isdigit()]
         if graded:
-            stats.avg_grade_when_submitted = statistics.mean(
-                int(r.grade_received) for r in graded
-            )
+            stats.avg_grade_when_submitted = statistics.mean(int(r.grade_received) for r in graded)
 
         # Time saved
         time_records = [r for r in records if r.estimated_time_saved_min > 0]
         stats.total_time_saved_min = sum(r.estimated_time_saved_min for r in records)
         if time_records:
-            stats.avg_time_saved_min = statistics.mean(
-                r.estimated_time_saved_min for r in time_records
-            )
+            stats.avg_time_saved_min = statistics.mean(r.estimated_time_saved_min for r in time_records)
 
         # Cost
         stats.avg_cost_per_run = stats.total_cost_usd / stats.total_runs
@@ -295,13 +292,9 @@ class FeedbackStore:
         if audited:
             stats.avg_audit_completeness = statistics.mean(r.audit_completeness for r in audited)
             stats.avg_audit_feasibility = statistics.mean(r.audit_feasibility for r in audited)
-            stats.avg_contradictions_per_assignment = statistics.mean(
-                r.contradictions_found for r in audited
-            )
+            stats.avg_contradictions_per_assignment = statistics.mean(r.contradictions_found for r in audited)
             stats.avg_blockers_per_assignment = statistics.mean(r.audit_blockers for r in audited)
-            stats.pct_assignments_with_blockers = (
-                sum(1 for r in audited if r.audit_blockers > 0) / len(audited)
-            )
+            stats.pct_assignments_with_blockers = sum(1 for r in audited if r.audit_blockers > 0) / len(audited)
 
         return stats
 
@@ -309,6 +302,7 @@ class FeedbackStore:
 # ============================================================
 # Record Builder — creates feedback from pipeline results
 # ============================================================
+
 
 def build_feedback_from_result(
     session_id: str,
@@ -319,7 +313,7 @@ def build_feedback_from_result(
 
     Auto-fills everything except user feedback fields.
     """
-    results = pipeline_result.results if hasattr(pipeline_result, 'results') else []
+    results = pipeline_result.results if hasattr(pipeline_result, "results") else []
 
     # Determine flow type
     stage_names = [r.stage for r in results]
@@ -360,7 +354,7 @@ def build_feedback_from_result(
     # Collect backends used
     backends = set()
     for r in results:
-        meta = r.metadata if hasattr(r, 'metadata') else {}
+        meta = r.metadata if hasattr(r, "metadata") else {}
         if isinstance(meta, dict) and meta.get("backend"):
             backends.add(meta["backend"])
 
@@ -368,17 +362,15 @@ def build_feedback_from_result(
         run_id=session_id,
         timestamp=datetime.now(timezone.utc).isoformat(),
         pipeline_flow=flow,
-        preset_key=preset.key if preset and hasattr(preset, 'key') else "",
-        subject=preset.subject if preset and hasattr(preset, 'subject') else "",
-        output_format=preset.output_format if preset and hasattr(preset, 'output_format') else "",
-        education_level=getattr(preset, 'difficulty', '') if preset else "",
-
+        preset_key=preset.key if preset and hasattr(preset, "key") else "",
+        subject=preset.subject if preset and hasattr(preset, "subject") else "",
+        output_format=preset.output_format if preset and hasattr(preset, "output_format") else "",
+        education_level=getattr(preset, "difficulty", "") if preset else "",
         total_stages=len(results),
         failed_stages=sum(1 for r in results if not r.success),
-        total_cost_usd=getattr(pipeline_result, 'total_cost_usd', 0.0),
-        elapsed_ms=getattr(pipeline_result, 'elapsed_ms', 0),
+        total_cost_usd=getattr(pipeline_result, "total_cost_usd", 0.0),
+        elapsed_ms=getattr(pipeline_result, "elapsed_ms", 0),
         backends_used=sorted(backends),
-
         audit_findings_total=audit_summary.get("total_findings", 0),
         audit_blockers=audit_summary.get("blockers", 0),
         audit_warnings=audit_summary.get("warnings", 0),
@@ -387,7 +379,13 @@ def build_feedback_from_result(
         requirements_total=req_counts.get("total", 0),
         requirements_clear=req_counts.get("clear", 0),
         requirements_ambiguous=req_counts.get("ambiguous", 0),
-        contradictions_found=len(audit_data.get("findings", [f for f in audit_data.get("findings", []) if f.get("category") == "contradiction"])) if audit_data else 0,
+        contradictions_found=len(
+            audit_data.get(
+                "findings", [f for f in audit_data.get("findings", []) if f.get("category") == "contradiction"]
+            )
+        )
+        if audit_data
+        else 0,
         deviations_needed=0,  # Filled after amendments
     )
 
@@ -395,6 +393,7 @@ def build_feedback_from_result(
 # ============================================================
 # Research Export — anonymized aggregate only
 # ============================================================
+
 
 def export_for_research(store: FeedbackStore) -> dict[str, Any]:
     """Export anonymized aggregate data for the research dataset.
@@ -425,7 +424,9 @@ def export_for_research(store: FeedbackStore) -> dict[str, Any]:
             "avg_quality_by_subject": {k: round(v, 2) for k, v in stats.avg_quality_by_subject.items()},
             "quality_distribution": stats.quality_distribution,
             "usable_without_edits_pct": round(stats.usable_without_edits_pct * 100, 1),
-            "avg_grade_when_submitted": round(stats.avg_grade_when_submitted, 2) if stats.avg_grade_when_submitted else None,
+            "avg_grade_when_submitted": round(stats.avg_grade_when_submitted, 2)
+            if stats.avg_grade_when_submitted
+            else None,
         },
         "audit_findings": {
             "avg_completeness_pct": round(stats.avg_audit_completeness * 100, 1),
@@ -457,6 +458,7 @@ def _generate_instance_id(store: FeedbackStore) -> str:
 # ============================================================
 # CLI Integration Helpers
 # ============================================================
+
 
 def prompt_feedback_cli(run_id: str, store: FeedbackStore) -> FeedbackRecord | None:
     """Interactive CLI prompt for user feedback after a pipeline run.

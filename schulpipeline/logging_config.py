@@ -65,8 +65,7 @@ class JsonFormatter(logging.Formatter):
             entry["stage"] = stage
 
         # Add extra fields from LogRecord
-        for key in ("backend", "tokens_in", "tokens_out", "cost_usd",
-                     "latency_ms", "model", "elapsed_ms"):
+        for key in ("backend", "tokens_in", "tokens_out", "cost_usd", "latency_ms", "model", "elapsed_ms"):
             val = getattr(record, key, None)
             if val is not None:
                 entry[key] = val
@@ -141,7 +140,10 @@ def setup_logging(
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = RotatingFileHandler(
-            log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8",
+            log_file,
+            maxBytes=5 * 1024 * 1024,
+            backupCount=3,
+            encoding="utf-8",
         )
         file_handler.setFormatter(JsonFormatter())
         root.addHandler(file_handler)

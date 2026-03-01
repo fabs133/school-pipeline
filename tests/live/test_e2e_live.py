@@ -14,9 +14,7 @@ async def test_live_pptx_pipeline(live_config, live_router, tmp_path):
     live_config.output.dir = str(tmp_path)
 
     pipeline = Pipeline(live_config, live_router)
-    result = await pipeline.run(
-        "Erstellen Sie eine Präsentation über IT-Sicherheit, 6 Folien"
-    )
+    result = await pipeline.run("Erstellen Sie eine Präsentation über IT-Sicherheit, 6 Folien")
 
     assert result.success, f"Failed at {result.failed_stage}: {result.validation_errors}"
     assert result.output_path is not None
@@ -25,6 +23,7 @@ async def test_live_pptx_pipeline(live_config, live_router, tmp_path):
 
     # Verify it's a valid PPTX
     from pptx import Presentation
+
     prs = Presentation(result.output_path)
     assert len(prs.slides) >= 3
 
@@ -40,9 +39,7 @@ async def test_live_docx_pipeline(live_config, live_router, tmp_path):
     live_config.output.default_format = "docx"
 
     pipeline = Pipeline(live_config, live_router)
-    result = await pipeline.run(
-        "Schreiben Sie einen kurzen Aufsatz über Datenschutz (1 Seite)"
-    )
+    result = await pipeline.run("Schreiben Sie einen kurzen Aufsatz über Datenschutz (1 Seite)")
 
     assert result.success, f"Failed at {result.failed_stage}: {result.validation_errors}"
     assert result.output_path is not None
@@ -55,9 +52,7 @@ async def test_live_docx_pipeline(live_config, live_router, tmp_path):
 async def test_live_plan_only(live_config, live_router):
     """Dry run: intake + plan only, no file generation."""
     pipeline = Pipeline(live_config, live_router)
-    result = await pipeline.plan_only(
-        "Erstellen Sie eine Präsentation über Netzwerktechnik, 8 Folien"
-    )
+    result = await pipeline.plan_only("Erstellen Sie eine Präsentation über Netzwerktechnik, 8 Folien")
 
     assert result.success
     assert len(result.results) == 2

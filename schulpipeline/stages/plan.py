@@ -69,6 +69,7 @@ class PlanStage(BaseStage):
     :return: A dictionary containing the results of the execution.
     :rtype: dict[str, Any]
     """
+
     name = "plan"
     spec_path = "specs/plan.json"
     required_context = frozenset({"intake"})
@@ -130,6 +131,6 @@ class PlanStage(BaseStage):
         if len(ids) != len(set(ids)):
             # Fix duplicate IDs
             for i, section in enumerate(data["sections"]):
-                section["id"] = f"section_{i+1:02d}"
+                section["id"] = f"section_{i + 1:02d}"
 
         return data

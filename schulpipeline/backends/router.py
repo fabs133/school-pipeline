@@ -161,8 +161,7 @@ class BackendRouter:
 
         if not cascade:
             raise BackendError(
-                f"No backends available for stage '{stage}'. "
-                f"Available: {self.available_backends}",
+                f"No backends available for stage '{stage}'. Available: {self.available_backends}",
                 backend="router",
             )
 
@@ -188,8 +187,14 @@ class BackendRouter:
                 logger.info(f"[{stage}] Trying {name} (model={backend.model if hasattr(backend, 'model') else '?'})")
 
                 result = await self._call_backend(
-                    backend, name, stage, messages,
-                    temperature, max_tokens, response_format, require_vision,
+                    backend,
+                    name,
+                    stage,
+                    messages,
+                    temperature,
+                    max_tokens,
+                    response_format,
+                    require_vision,
                 )
 
                 self._call_counts[name] = self._call_counts.get(name, 0) + 1

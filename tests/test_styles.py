@@ -20,6 +20,7 @@ from schulpipeline.styles import (
 
 # --- Helpers to build minimal PipelineConfig ---
 
+
 def _cfg(**kwargs):
     """Build a PipelineConfig with style/visuals overrides."""
     defaults = dict(
@@ -37,6 +38,7 @@ def _cfg(**kwargs):
 # ============================================================
 # resolve_style
 # ============================================================
+
 
 def test_resolve_style_default():
     config = _cfg()
@@ -90,6 +92,7 @@ def test_resolve_style_none_overrides():
 # resolve_visual_config
 # ============================================================
 
+
 def test_resolve_visual_config_default():
     config = _cfg()
     vc = resolve_visual_config(config)
@@ -129,6 +132,7 @@ def test_resolve_visual_placement_override():
 # _to_rgb / _to_docx_rgb
 # ============================================================
 
+
 def test_to_rgb_valid():
     rgb = _to_rgb("#1E2761")
     assert rgb == _to_rgb("#1E2761")  # cached
@@ -160,8 +164,14 @@ def test_all_presets_valid_colors():
     for key, preset in STYLE_PRESETS.items():
         colors = preset.visual.colors
         for field_name in [
-            "primary", "secondary", "accent", "bg_dark", "bg_light",
-            "text_dark", "text_light", "text_muted",
+            "primary",
+            "secondary",
+            "accent",
+            "bg_dark",
+            "bg_light",
+            "text_dark",
+            "text_light",
+            "text_muted",
         ]:
             hex_val = getattr(colors, field_name)
             _to_rgb(hex_val)  # Should not raise
@@ -170,6 +180,7 @@ def test_all_presets_valid_colors():
 # ============================================================
 # _lighten
 # ============================================================
+
 
 def test_lighten_moves_toward_white():
     lightened = _lighten("#000000", 0.5)
@@ -185,6 +196,7 @@ def test_lighten_white_stays_white():
 # ============================================================
 # Tone instruction helpers
 # ============================================================
+
 
 def test_bullet_instruction_all_styles():
     for style in ("terse", "descriptive", "sentence"):
@@ -208,6 +220,7 @@ def test_bullet_instruction_unknown_fallback():
 # Frozen dataclass checks
 # ============================================================
 
+
 def test_style_preset_frozen():
     style = DEFAULT_STYLE
     with pytest.raises(FrozenInstanceError):
@@ -223,6 +236,7 @@ def test_visual_slot_config_frozen():
 # ============================================================
 # Preset completeness
 # ============================================================
+
 
 def test_six_presets_exist():
     expected = {"clean", "modern", "minimal", "school", "corporate", "dark"}

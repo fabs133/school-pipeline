@@ -1,4 +1,5 @@
 """Tests for worksheet decomposition, solving, and formatting — migrated from run_tests.py."""
+
 from __future__ import annotations
 
 import asyncio
@@ -22,60 +23,64 @@ from schulpipeline.worksheet import (
 # ---------------------------------------------------------------------------
 
 DEFAULT_RESPONSES = {
-    "Aufgaben-Parser für Schularbeitsblätter": json.dumps({
-        "title": "Gewinnverteilung OHG/KG",
-        "subject": "Wirtschaft",
-        "tasks": [
-            {
-                "id": "aufgabe_1a",
-                "label": "Übung 2, Aufgabe 1a",
-                "task_type": "table_fill",
-                "text": "Der Gewinn der Baumeister OHG beträgt 130.000 €. Berechnen Sie die Gewinnaufteilung nach §121 HGB.",
-                "context": "4% Zinsen auf Kapitalanteil, Rest nach Köpfen",
-                "table_structure": {
-                    "headers": ["Name", "Kapitalanteil", "4% Zinsen", "Restgewinn", "Gesamtgewinn"],
-                    "rows": [
-                        {"label": "Bauer", "values": ["100.000 €", "", "", ""]},
-                        {"label": "Müller", "values": ["150.000 €", "", "", ""]},
-                    ],
+    "Aufgaben-Parser für Schularbeitsblätter": json.dumps(
+        {
+            "title": "Gewinnverteilung OHG/KG",
+            "subject": "Wirtschaft",
+            "tasks": [
+                {
+                    "id": "aufgabe_1a",
+                    "label": "Übung 2, Aufgabe 1a",
+                    "task_type": "table_fill",
+                    "text": "Der Gewinn der Baumeister OHG beträgt 130.000 €. Berechnen Sie die Gewinnaufteilung nach §121 HGB.",
+                    "context": "4% Zinsen auf Kapitalanteil, Rest nach Köpfen",
+                    "table_structure": {
+                        "headers": ["Name", "Kapitalanteil", "4% Zinsen", "Restgewinn", "Gesamtgewinn"],
+                        "rows": [
+                            {"label": "Bauer", "values": ["100.000 €", "", "", ""]},
+                            {"label": "Müller", "values": ["150.000 €", "", "", ""]},
+                        ],
+                    },
+                    "data": {"gewinn": 130000, "zinssatz": 0.04},
+                    "external_url": "",
+                    "solvable": True,
+                    "skip_reason": "",
                 },
-                "data": {"gewinn": 130000, "zinssatz": 0.04},
-                "external_url": "",
-                "solvable": True,
-                "skip_reason": "",
-            },
-            {
-                "id": "uebung_1",
-                "label": "Übung 1",
-                "task_type": "external_link",
-                "text": "Quiz auf lernnetz24.de",
-                "context": "",
-                "table_structure": None,
-                "data": {},
-                "external_url": "https://www.lernnetz24.de/bwl/hinweise/99.html",
-                "solvable": False,
-                "skip_reason": "Externer Link — Quiz muss im Browser bearbeitet werden",
-            },
-        ],
-    }),
-    "Aufgaben-Löser für Schulaufgaben": json.dumps({
-        "answer": "Bauer erhält 25.000 € Gesamtgewinn, Müller erhält 66.000 €",
-        "table_data": {
-            "headers": ["Name", "Kapitalanteil", "4% Zinsen", "Restgewinn", "Gesamtgewinn"],
-            "rows": [
-                {"label": "Bauer", "values": ["100.000 €", "4.000 €", "56.000 €", "60.000 €"]},
-                {"label": "Müller", "values": ["150.000 €", "6.000 €", "56.000 €", "62.000 €"]},
-                {"label": "Summe", "values": ["250.000 €", "10.000 €", "112.000 €", "122.000 €"]},
+                {
+                    "id": "uebung_1",
+                    "label": "Übung 1",
+                    "task_type": "external_link",
+                    "text": "Quiz auf lernnetz24.de",
+                    "context": "",
+                    "table_structure": None,
+                    "data": {},
+                    "external_url": "https://www.lernnetz24.de/bwl/hinweise/99.html",
+                    "solvable": False,
+                    "skip_reason": "Externer Link — Quiz muss im Browser bearbeitet werden",
+                },
             ],
-        },
-        "calculation_steps": [
-            "4% von 100.000 = 4.000 €",
-            "4% von 150.000 = 6.000 €",
-            "Restgewinn: 130.000 - 10.000 = 120.000 €",
-            "Pro Kopf: 120.000 / 2 = 60.000 €",
-        ],
-        "confidence": 0.95,
-    }),
+        }
+    ),
+    "Aufgaben-Löser für Schulaufgaben": json.dumps(
+        {
+            "answer": "Bauer erhält 25.000 € Gesamtgewinn, Müller erhält 66.000 €",
+            "table_data": {
+                "headers": ["Name", "Kapitalanteil", "4% Zinsen", "Restgewinn", "Gesamtgewinn"],
+                "rows": [
+                    {"label": "Bauer", "values": ["100.000 €", "4.000 €", "56.000 €", "60.000 €"]},
+                    {"label": "Müller", "values": ["150.000 €", "6.000 €", "56.000 €", "62.000 €"]},
+                    {"label": "Summe", "values": ["250.000 €", "10.000 €", "112.000 €", "122.000 €"]},
+                ],
+            },
+            "calculation_steps": [
+                "4% von 100.000 = 4.000 €",
+                "4% von 150.000 = 6.000 €",
+                "Restgewinn: 130.000 - 10.000 = 120.000 €",
+                "Pro Kopf: 120.000 / 2 = 60.000 €",
+            ],
+            "confidence": 0.95,
+        }
+    ),
 }
 
 
@@ -126,9 +131,19 @@ def _make_mock_router():
         cascade={
             stage: ["mock"]
             for stage in [
-                "intake", "plan", "research", "synthesize", "artifact",
-                "agent_codegen", "decompose", "solve", "classify_docs",
-                "fill_template", "audit", "classify_report", "amendments",
+                "intake",
+                "plan",
+                "research",
+                "synthesize",
+                "artifact",
+                "agent_codegen",
+                "decompose",
+                "solve",
+                "classify_docs",
+                "fill_template",
+                "audit",
+                "classify_report",
+                "amendments",
             ]
         },
         research=ResearchConfig(enabled=False, use_web=False),

@@ -48,39 +48,43 @@ _logger = logging.getLogger("schulpipeline.documents")
 # Document Role Model
 # ============================================================
 
+
 @dataclass
 class ClassifiedDocument:
     """A document with its classified role."""
-    id: str                          # "doc_01"
-    filename: str                    # "Projektantrag.docx"
-    role: str                        # template | source | constraint | reference
-    content_type: str                # docx | pptx | pdf | text | image
-    content: str                     # Extracted text content
+
+    id: str  # "doc_01"
+    filename: str  # "Projektantrag.docx"
+    role: str  # template | source | constraint | reference
+    content_type: str  # docx | pptx | pdf | text | image
+    content: str  # Extracted text content
     fields: list[TemplateField] | None = None  # For templates: detected fields
     extracted_info: dict[str, Any] = field(default_factory=dict)  # For sources
     constraints: list[str] = field(default_factory=list)  # For constraints
-    raw_path: str = ""               # Original file path if available
+    raw_path: str = ""  # Original file path if available
 
 
 @dataclass
 class TemplateField:
     """A fillable field detected in a template document."""
-    id: str                          # "field_01"
-    label: str                       # "Projektbezeichnung"
-    field_type: str                  # text | paragraph | table_cell | placeholder
-    location: str                    # Where in the document (for human reference)
-    current_value: str = ""          # What's currently there (placeholder text, empty, etc.)
-    max_length: int | None = None    # Character limit (estimated from space)
+
+    id: str  # "field_01"
+    label: str  # "Projektbezeichnung"
+    field_type: str  # text | paragraph | table_cell | placeholder
+    location: str  # Where in the document (for human reference)
+    current_value: str = ""  # What's currently there (placeholder text, empty, etc.)
+    max_length: int | None = None  # Character limit (estimated from space)
     constraints: list[str] = field(default_factory=list)  # "must fit on one line", etc.
 
 
 @dataclass
 class FilledTemplate:
     """Result of filling a template."""
+
     template_id: str
     output_path: str
     fields_filled: list[dict[str, str]]  # [{field_id, label, value}]
-    fields_skipped: list[dict[str, str]] # [{field_id, label, reason}]
+    fields_skipped: list[dict[str, str]]  # [{field_id, label, reason}]
     warnings: list[str] = field(default_factory=list)
 
 
@@ -179,7 +183,7 @@ class ClassifyDocsStage(BaseStage):
         # Build document listing for the LLM
         doc_listing = []
         for i, doc in enumerate(documents):
-            entry = f"--- Dokument {i+1}: {doc.get('filename', f'doc_{i}')} ---\n"
+            entry = f"--- Dokument {i + 1}: {doc.get('filename', f'doc_{i}')} ---\n"
             entry += f"Typ: {doc.get('content_type', 'text')}\n"
             entry += f"Inhalt:\n{doc.get('content', '')[:3000]}\n"
             doc_listing.append(entry)
@@ -282,8 +286,7 @@ class FillTemplateStage(BaseStage):
         results = []
         for template in templates:
             filled = await self._fill_single_template(
-                template, source_info, constraint_rules, contradictions,
-                backend, preset
+                template, source_info, constraint_rules, contradictions, backend, preset
             )
             results.append(filled)
 
@@ -317,8 +320,7 @@ class FillTemplateStage(BaseStage):
         return data
 
     async def _fill_single_template(
-        self, template: dict, source_info: dict, constraints: list[str],
-        contradictions: list, backend: Any, preset: Any
+        self, template: dict, source_info: dict, constraints: list[str], contradictions: list, backend: Any, preset: Any
     ) -> dict:
         """Fill a single template document."""
         fields = template.get("fields", []) or []
@@ -335,9 +337,9 @@ class FillTemplateStage(BaseStage):
         context_parts.append(f"Template: {template.get('filename', '?')}")
         context_parts.append("\nFelder zum Ausfüllen:")
         for f in fields:
-            limit = f" (max {f['max_length']} Zeichen)" if f.get('max_length') else ""
+            limit = f" (max {f['max_length']} Zeichen)" if f.get("max_length") else ""
             context_parts.append(f"  - {f['label']}: {f['field_type']}{limit}")
-            if f.get('constraints'):
+            if f.get("constraints"):
                 context_parts.append(f"    Einschränkungen: {', '.join(f['constraints'])}")
 
         context_parts.append("\nVerfügbare Informationen:")
@@ -351,9 +353,7 @@ class FillTemplateStage(BaseStage):
         if contradictions:
             context_parts.append("\nWidersprüche (beachten!):")
             for c in contradictions:
-                context_parts.append(
-                    f"  - {c.get('topic', '?')}: {c.get('recommendation', 'Unklar')}"
-                )
+                context_parts.append(f"  - {c.get('topic', '?')}: {c.get('recommendation', 'Unklar')}")
 
         context_text = "\n".join(context_parts)
         prompt = FILL_TEMPLATE_PROMPT.replace("{context}", context_text)
@@ -420,6 +420,7 @@ class FillTemplateStage(BaseStage):
 # ============================================================
 # Template Application — write values back into actual files
 # ============================================================
+
 
 def apply_to_docx(template_path: str | Path, filled_fields: list[dict], output_path: str | Path) -> list[str]:
     """Fill a DOCX template in-place, preserving all formatting.
@@ -520,9 +521,7 @@ def apply_to_pptx(template_path: str | Path, filled_fields: list[dict], output_p
                                     filled_count += 1
 
     if filled_count < len(field_map):
-        warnings.append(
-            f"Nur {filled_count}/{len(field_map)} Felder im PPTX gefunden."
-        )
+        warnings.append(f"Nur {filled_count}/{len(field_map)} Felder im PPTX gefunden.")
 
     prs.save(str(output_path))
     return warnings
@@ -532,9 +531,10 @@ def apply_to_pptx(template_path: str | Path, filled_fields: list[dict], output_p
 # Helpers
 # ============================================================
 
+
 def _normalize(text: str) -> str:
     """Normalize text for fuzzy matching: lowercase, strip extra whitespace."""
-    return re.sub(r'\s+', ' ', text.lower().strip())
+    return re.sub(r"\s+", " ", text.lower().strip())
 
 
 def _replace_in_paragraph(paragraph, label: str, value: str) -> None:

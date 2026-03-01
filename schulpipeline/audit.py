@@ -42,22 +42,25 @@ _logger = logging.getLogger("schulpipeline.audit")
 # Audit Model
 # ============================================================
 
+
 @dataclass
 class AuditFinding:
     """A single finding from the specification audit."""
-    id: str                          # "F-001"
-    category: str                    # contradiction | gap | impossibility | ambiguity | underdefined
-    severity: str                    # blocker | warning | info
-    title: str                       # Short description
-    detail: str                      # Full explanation
-    sources: list[str]               # Which documents are involved
-    quotes: list[str]                # Direct quotes from source material
-    recommendation: str = ""         # What should be clarified/changed
+
+    id: str  # "F-001"
+    category: str  # contradiction | gap | impossibility | ambiguity | underdefined
+    severity: str  # blocker | warning | info
+    title: str  # Short description
+    detail: str  # Full explanation
+    sources: list[str]  # Which documents are involved
+    quotes: list[str]  # Direct quotes from source material
+    recommendation: str = ""  # What should be clarified/changed
 
 
 @dataclass
 class AuditReport:
     """Complete audit of assignment specifications."""
+
     title: str
     timestamp: str
     documents_analyzed: list[str]
@@ -69,18 +72,20 @@ class AuditReport:
 @dataclass
 class AuditSummary:
     """Summary statistics for the audit."""
+
     total_findings: int
     blockers: int
     warnings: int
     info: int
-    completeness_score: float        # 0-1, how complete are the specs
-    feasibility_score: float         # 0-1, how feasible given constraints
-    verdict: str                     # "Vorgaben unvollständig" / "Widersprüche gefunden" / "OK"
+    completeness_score: float  # 0-1, how complete are the specs
+    feasibility_score: float  # 0-1, how feasible given constraints
+    verdict: str  # "Vorgaben unvollständig" / "Widersprüche gefunden" / "OK"
 
 
 # ============================================================
 # Deterministic Checks — no LLM needed
 # ============================================================
+
 
 def check_template_field_feasibility(
     template: dict,
@@ -95,15 +100,17 @@ def check_template_field_feasibility(
     fields = template.get("fields", []) or []
 
     if not fields:
-        findings.append({
-            "category": "gap",
-            "severity": "warning",
-            "title": f"Keine Felder in Template '{template.get('filename', '?')}' erkannt",
-            "detail": "Das Template enthält keine erkennbaren ausfüllbaren Felder. "
-                      "Entweder ist das Format ungewöhnlich oder es fehlen Platzhalter.",
-            "sources": [template.get("filename", "?")],
-            "quotes": [],
-        })
+        findings.append(
+            {
+                "category": "gap",
+                "severity": "warning",
+                "title": f"Keine Felder in Template '{template.get('filename', '?')}' erkannt",
+                "detail": "Das Template enthält keine erkennbaren ausfüllbaren Felder. "
+                "Entweder ist das Format ungewöhnlich oder es fehlen Platzhalter.",
+                "sources": [template.get("filename", "?")],
+                "quotes": [],
+            }
+        )
         return findings
 
     # Check: do we have enough fields for all requirements?
@@ -116,32 +123,36 @@ def check_template_field_feasibility(
         label = f.get("label", "?")
 
         if max_len and max_len < 20:
-            findings.append({
-                "category": "impossibility",
-                "severity": "warning",
-                "title": f"Feld '{label}' hat nur {max_len} Zeichen",
-                "detail": f"Das Feld '{label}' erlaubt maximal {max_len} Zeichen. "
-                          f"Das reicht möglicherweise nicht für eine sinnvolle Antwort.",
-                "sources": [template.get("filename", "?")],
-                "quotes": [],
-            })
+            findings.append(
+                {
+                    "category": "impossibility",
+                    "severity": "warning",
+                    "title": f"Feld '{label}' hat nur {max_len} Zeichen",
+                    "detail": f"Das Feld '{label}' erlaubt maximal {max_len} Zeichen. "
+                    f"Das reicht möglicherweise nicht für eine sinnvolle Antwort.",
+                    "sources": [template.get("filename", "?")],
+                    "quotes": [],
+                }
+            )
 
     # Estimate total available space
     total_chars = sum(f.get("max_length", 500) for f in fields)
     avg_chars_per_req = total_chars / max(req_count, 1)
 
     if req_count > 0 and avg_chars_per_req < 50:
-        findings.append({
-            "category": "impossibility",
-            "severity": "blocker",
-            "title": "Template hat nicht genug Platz für alle Anforderungen",
-            "detail": f"{req_count} Anforderungen müssen in {field_count} Felder "
-                      f"mit insgesamt ~{total_chars} Zeichen passen. "
-                      f"Das ergibt durchschnittlich {avg_chars_per_req:.0f} Zeichen pro Anforderung.",
-            "sources": [template.get("filename", "?")],
-            "quotes": [],
-            "recommendation": "Entweder Anforderungen reduzieren oder mehr Platz im Template schaffen.",
-        })
+        findings.append(
+            {
+                "category": "impossibility",
+                "severity": "blocker",
+                "title": "Template hat nicht genug Platz für alle Anforderungen",
+                "detail": f"{req_count} Anforderungen müssen in {field_count} Felder "
+                f"mit insgesamt ~{total_chars} Zeichen passen. "
+                f"Das ergibt durchschnittlich {avg_chars_per_req:.0f} Zeichen pro Anforderung.",
+                "sources": [template.get("filename", "?")],
+                "quotes": [],
+                "recommendation": "Entweder Anforderungen reduzieren oder mehr Platz im Template schaffen.",
+            }
+        )
 
     return findings
 
@@ -170,7 +181,7 @@ def check_page_constraint(
         if field_type == "paragraph":
             min_required_chars += 200  # Minimum sensible paragraph
         elif field_type == "text":
-            min_required_chars += 30   # Minimum sensible text field
+            min_required_chars += 30  # Minimum sensible text field
         elif field_type == "table_cell":
             min_required_chars += 15
 
@@ -179,19 +190,21 @@ def check_page_constraint(
     total_estimated = min_required_chars + overhead_chars
 
     if total_estimated > max_chars:
-        findings.append({
-            "category": "impossibility",
-            "severity": "blocker",
-            "title": f"Inhalt passt nicht auf {max_pages} Seite(n)",
-            "detail": f"Geschätzt werden mindestens {total_estimated} Zeichen benötigt "
-                      f"({len(fields)} Felder + Labels). "
-                      f"Bei {max_pages} Seite(n) stehen ca. {max_chars} Zeichen zur Verfügung. "
-                      f"Differenz: {total_estimated - max_chars} Zeichen zu viel.",
-            "sources": [template.get("filename", "?")],
-            "quotes": [],
-            "recommendation": f"Entweder auf {math.ceil(total_estimated / chars_per_page)} Seiten erweitern "
-                              f"oder {len(fields) - int(max_chars / (min_required_chars / max(len(fields), 1)))} Felder streichen.",
-        })
+        findings.append(
+            {
+                "category": "impossibility",
+                "severity": "blocker",
+                "title": f"Inhalt passt nicht auf {max_pages} Seite(n)",
+                "detail": f"Geschätzt werden mindestens {total_estimated} Zeichen benötigt "
+                f"({len(fields)} Felder + Labels). "
+                f"Bei {max_pages} Seite(n) stehen ca. {max_chars} Zeichen zur Verfügung. "
+                f"Differenz: {total_estimated - max_chars} Zeichen zu viel.",
+                "sources": [template.get("filename", "?")],
+                "quotes": [],
+                "recommendation": f"Entweder auf {math.ceil(total_estimated / chars_per_page)} Seiten erweitern "
+                f"oder {len(fields) - int(max_chars / (min_required_chars / max(len(fields), 1)))} Felder streichen.",
+            }
+        )
 
     return findings
 
@@ -222,16 +235,18 @@ def check_contradictions_deterministic(documents: list[dict]) -> list[dict]:
             continue
         values = set(v for _, v in sources)
         if len(values) > 1:
-            source_details = [f"{fn}: \"{val}\"" for fn, val in sources]
-            findings.append({
-                "category": "contradiction",
-                "severity": "warning",
-                "title": f"Widersprüchliche Angaben zu '{topic}'",
-                "detail": "Verschiedene Dokumente machen unterschiedliche Angaben:\n"
-                          + "\n".join(f"  - {s}" for s in source_details),
-                "sources": list(set(fn for fn, _ in sources)),
-                "quotes": [v for _, v in sources],
-            })
+            source_details = [f'{fn}: "{val}"' for fn, val in sources]
+            findings.append(
+                {
+                    "category": "contradiction",
+                    "severity": "warning",
+                    "title": f"Widersprüchliche Angaben zu '{topic}'",
+                    "detail": "Verschiedene Dokumente machen unterschiedliche Angaben:\n"
+                    + "\n".join(f"  - {s}" for s in source_details),
+                    "sources": list(set(fn for fn, _ in sources)),
+                    "quotes": [v for _, v in sources],
+                }
+            )
 
     return findings
 
@@ -245,9 +260,18 @@ def check_missing_references(documents: list[dict]) -> list[dict]:
 
     # Common reference patterns in German school documents
     reference_markers = [
-        "siehe ", "laut ", "gemäß ", "nach ", "entsprechend ",
-        "Anlage ", "Anhang ", "Bewertungsschema", "Bewertungsbogen",
-        "Notenspiegel", "Rubrik", "Checkliste",
+        "siehe ",
+        "laut ",
+        "gemäß ",
+        "nach ",
+        "entsprechend ",
+        "Anlage ",
+        "Anhang ",
+        "Bewertungsschema",
+        "Bewertungsbogen",
+        "Notenspiegel",
+        "Rubrik",
+        "Checkliste",
     ]
 
     provided_filenames = {doc.get("filename", "").lower() for doc in documents}
@@ -267,16 +291,18 @@ def check_missing_references(documents: list[dict]) -> list[dict]:
                 context_end = min(len(all_content), idx + len(marker) + 50)
                 context = all_content[context_start:context_end].strip()
 
-                findings.append({
-                    "category": "underdefined",
-                    "severity": "warning",
-                    "title": f"Referenziertes Dokument nicht bereitgestellt: '{marker.strip()}'",
-                    "detail": f"Es wird auf '{marker.strip()}' verwiesen, aber dieses Dokument "
-                              f"wurde nicht bereitgestellt.",
-                    "sources": ["Alle Dokumente"],
-                    "quotes": [f"...{context}..."],
-                    "recommendation": f"'{marker.strip()}' anfordern oder klären ob es existiert.",
-                })
+                findings.append(
+                    {
+                        "category": "underdefined",
+                        "severity": "warning",
+                        "title": f"Referenziertes Dokument nicht bereitgestellt: '{marker.strip()}'",
+                        "detail": f"Es wird auf '{marker.strip()}' verwiesen, aber dieses Dokument "
+                        f"wurde nicht bereitgestellt.",
+                        "sources": ["Alle Dokumente"],
+                        "quotes": [f"...{context}..."],
+                        "recommendation": f"'{marker.strip()}' anfordern oder klären ob es existiert.",
+                    }
+                )
 
     return findings
 
@@ -371,30 +397,28 @@ class AuditStage(BaseStage):
             all_requirements.extend(src.get("extracted_info", {}).get("requirements", []))
 
         for tmpl in templates:
-            deterministic_findings.extend(
-                check_template_field_feasibility(tmpl, all_requirements)
-            )
+            deterministic_findings.extend(check_template_field_feasibility(tmpl, all_requirements))
             # Check page constraints from preset
             max_pages = None
             if preset:
                 max_pages = preset.output_constraints.get("max_pages")
-            deterministic_findings.extend(
-                check_page_constraint(tmpl, max_pages, all_requirements)
-            )
+            deterministic_findings.extend(check_page_constraint(tmpl, max_pages, all_requirements))
 
         deterministic_findings.extend(check_contradictions_deterministic(documents))
 
         # Include contradictions already found by classify_docs
         for c in classified.get("contradictions", []):
-            deterministic_findings.append({
-                "category": "contradiction",
-                "severity": "warning",
-                "title": f"Widerspruch: {c.get('topic', '?')}",
-                "detail": f"{c.get('source_a', '?')} vs. {c.get('source_b', '?')}",
-                "sources": [c.get("source_a", "?"), c.get("source_b", "?")],
-                "quotes": [],
-                "recommendation": c.get("recommendation", "Klärung erforderlich"),
-            })
+            deterministic_findings.append(
+                {
+                    "category": "contradiction",
+                    "severity": "warning",
+                    "title": f"Widerspruch: {c.get('topic', '?')}",
+                    "detail": f"{c.get('source_a', '?')} vs. {c.get('source_b', '?')}",
+                    "sources": [c.get("source_a", "?"), c.get("source_b", "?")],
+                    "quotes": [],
+                    "recommendation": c.get("recommendation", "Klärung erforderlich"),
+                }
+            )
 
         deterministic_findings.extend(check_missing_references(documents))
 
@@ -406,7 +430,7 @@ class AuditStage(BaseStage):
 
         # Number findings
         for i, f in enumerate(all_findings):
-            f["id"] = f"F-{i+1:03d}"
+            f["id"] = f"F-{i + 1:03d}"
 
         # Calculate summary
         blockers = sum(1 for f in all_findings if f.get("severity") == "blocker")
@@ -456,8 +480,7 @@ class AuditStage(BaseStage):
                 format_audit_as_docx(data, audit_docx)
                 # For audit-only mode, this IS the primary output
                 is_audit_only = (
-                    preset and hasattr(preset, "output_constraints")
-                    and preset.output_constraints.get("audit_only")
+                    preset and hasattr(preset, "output_constraints") and preset.output_constraints.get("audit_only")
                 )
                 if is_audit_only:
                     data["file_path"] = str(audit_docx)
@@ -468,8 +491,7 @@ class AuditStage(BaseStage):
                 audit_md = output_dir / f"{safe_title}.md"
                 audit_md.write_text(format_audit_as_md(data), encoding="utf-8")
                 is_audit_only = (
-                    preset and hasattr(preset, "output_constraints")
-                    and preset.output_constraints.get("audit_only")
+                    preset and hasattr(preset, "output_constraints") and preset.output_constraints.get("audit_only")
                 )
                 if is_audit_only:
                     data["file_path"] = str(audit_md)
@@ -526,9 +548,7 @@ class AuditStage(BaseStage):
             title_lower = lf.get("title", "").lower()
             # Skip if there's a very similar title already
             is_duplicate = any(
-                title_lower in existing or existing in title_lower
-                for existing in existing_titles
-                if len(existing) > 10
+                title_lower in existing or existing in title_lower for existing in existing_titles if len(existing) > 10
             )
             if not is_duplicate:
                 all_findings.append(lf)
@@ -544,6 +564,7 @@ class AuditStage(BaseStage):
 # ============================================================
 # Report Formatters
 # ============================================================
+
 
 def format_audit_as_md(audit: dict[str, Any]) -> str:
     """Format audit report as Markdown — clear, confrontable, linkable."""
@@ -695,7 +716,7 @@ def format_audit_as_docx(audit: dict[str, Any], output_path) -> None:
             quotes = f.get("quotes", [])
             for q in quotes:
                 quote_para = doc.add_paragraph()
-                quote_run = quote_para.add_run('  \u201e' + q + '\u201c')
+                quote_run = quote_para.add_run("  \u201e" + q + "\u201c")
                 quote_run.italic = True
                 quote_run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
@@ -734,7 +755,7 @@ def _format_finding(f: dict) -> list[str]:
     quotes = f.get("quotes", [])
     if quotes:
         for q in quotes:
-            lines.append('> \u201e' + q + '\u201c')
+            lines.append("> \u201e" + q + "\u201c")
 
     rec = f.get("recommendation", "")
     if rec:

@@ -57,41 +57,45 @@ _logger = logging.getLogger("schulpipeline.requirements")
 # Data Model
 # ============================================================
 
+
 @dataclass
 class Requirement:
     """A single extracted requirement."""
-    id: str                          # "REQ-001"
-    text: str                        # The requirement as stated
-    source: str                      # Which document
-    category: str                    # functional | format | constraint | process | quality
-    status: str                      # clear | ambiguous | contradicted | gap
-    priority: str                    # must | should | nice_to_have
+
+    id: str  # "REQ-001"
+    text: str  # The requirement as stated
+    source: str  # Which document
+    category: str  # functional | format | constraint | process | quality
+    status: str  # clear | ambiguous | contradicted | gap
+    priority: str  # must | should | nice_to_have
     related_findings: list[str] = field(default_factory=list)  # Finding IDs from audit
-    quote: str = ""                  # Original text from source
+    quote: str = ""  # Original text from source
 
 
 @dataclass
 class Amendment:
     """A student decision that resolves an audit finding."""
-    id: str                          # "AMD-001"
-    resolves: str                    # Finding ID (e.g., "F-002") or Requirement ID
-    decision: str                    # What was decided
-    reasoning: str                   # Why this decision
-    source: str                      # "auto" | "manual" | "teacher_confirmed"
+
+    id: str  # "AMD-001"
+    resolves: str  # Finding ID (e.g., "F-002") or Requirement ID
+    decision: str  # What was decided
+    reasoning: str  # Why this decision
+    source: str  # "auto" | "manual" | "teacher_confirmed"
     alternatives_considered: list[str] = field(default_factory=list)
 
 
 @dataclass
 class Deviation:
     """A documented deviation from stated constraints."""
-    id: str                          # "DEV-001"
-    constraint: str                  # The constraint as stated
-    constraint_source: str           # Where the constraint comes from
-    reason: str                      # Why it can't be met
-    evidence: str                    # Numbers, calculations, proof
-    alternative: str                 # What we'll do instead
-    impact: str                      # What this means for the result
-    severity: str                    # minor | moderate | major
+
+    id: str  # "DEV-001"
+    constraint: str  # The constraint as stated
+    constraint_source: str  # Where the constraint comes from
+    reason: str  # Why it can't be met
+    evidence: str  # Numbers, calculations, proof
+    alternative: str  # What we'll do instead
+    impact: str  # What this means for the result
+    severity: str  # minor | moderate | major
 
 
 # ============================================================
@@ -224,7 +228,18 @@ def _cross_reference(requirements: list[dict], findings: list[dict]) -> list[dic
             # Simple keyword overlap check
             req_words = set(req_text.split())
             finding_words = set(finding_text.split())
-            overlap = req_words & finding_words - {"die", "der", "das", "und", "oder", "ein", "eine", "mit", "von", "zu"}
+            overlap = req_words & finding_words - {
+                "die",
+                "der",
+                "das",
+                "und",
+                "oder",
+                "ein",
+                "eine",
+                "mit",
+                "von",
+                "zu",
+            }
             if len(overlap) >= 2:
                 related.append(f.get("id", "?"))
         req["related_findings"] = related
@@ -369,6 +384,7 @@ class AmendmentsStage(BaseStage):
 # Part C: Deviation Log — justify every deviation
 # ============================================================
 
+
 def generate_deviations(
     audit: dict[str, Any],
     amendments: dict[str, Any],
@@ -411,7 +427,8 @@ def _extract_evidence(finding: dict) -> str:
     detail = finding.get("detail", "")
     # Look for numbers in the detail text
     import re
-    numbers = re.findall(r'\d+[\.\d]*', detail)
+
+    numbers = re.findall(r"\d+[\.\d]*", detail)
     if numbers:
         return detail  # The detail itself contains the evidence
     return "Siehe Detailbeschreibung im Audit-Bericht"
@@ -437,6 +454,7 @@ def _deviation_severity(finding: dict) -> str:
 # ============================================================
 # Combined Report Generator
 # ============================================================
+
 
 def build_full_report(
     classify_report: dict[str, Any],
@@ -484,6 +502,7 @@ def build_full_report(
 # Markdown Formatter
 # ============================================================
 
+
 def format_report_as_md(report: dict[str, Any]) -> str:
     """Format the three-part report as Markdown."""
     lines = ["# Anforderungsdokumentation\n"]
@@ -505,21 +524,26 @@ def format_report_as_md(report: dict[str, Any]) -> str:
         lines.append("| Status | Anzahl |")
         lines.append("|---|---|")
         for status in ["clear", "ambiguous", "contradicted", "gap"]:
-            label = {"clear": "Eindeutig", "ambiguous": "Mehrdeutig",
-                     "contradicted": "Widersprüchlich", "gap": "Fehlend"}.get(status, status)
+            label = {
+                "clear": "Eindeutig",
+                "ambiguous": "Mehrdeutig",
+                "contradicted": "Widersprüchlich",
+                "gap": "Fehlend",
+            }.get(status, status)
             lines.append(f"| {label} | {counts.get(status, 0)} |")
         lines.append("")
 
     for req in part_a.get("requirements", []):
-        status_icon = {
-            "clear": "\u2705", "ambiguous": "\u26A0\uFE0F",
-            "contradicted": "\u274C", "gap": "\u2753"
-        }.get(req.get("status", ""), "")
+        status_icon = {"clear": "\u2705", "ambiguous": "\u26a0\ufe0f", "contradicted": "\u274c", "gap": "\u2753"}.get(
+            req.get("status", ""), ""
+        )
 
         lines.append(f"### {req.get('id', '?')}: {req.get('text', '?')} {status_icon}")
-        lines.append(f"*Quelle: {req.get('source', '?')} | "
-                      f"Kategorie: {req.get('category', '?')} | "
-                      f"Priorität: {req.get('priority', '?')}*")
+        lines.append(
+            f"*Quelle: {req.get('source', '?')} | "
+            f"Kategorie: {req.get('category', '?')} | "
+            f"Priorität: {req.get('priority', '?')}*"
+        )
         if req.get("quote"):
             lines.append(f'> "{req["quote"]}"')
         if req.get("related_findings"):
@@ -532,8 +556,7 @@ def format_report_as_md(report: dict[str, Any]) -> str:
         lines.append("*Nicht explizit genannt, aber aus dem Kontext abgeleitet:*\n")
         for imp in implicit:
             conf = imp.get("confidence", 0)
-            lines.append(f"- **{imp.get('id', '?')}**: {imp.get('text', '?')} "
-                          f"({conf:.0%} Konfidenz)")
+            lines.append(f"- **{imp.get('id', '?')}**: {imp.get('text', '?')} ({conf:.0%} Konfidenz)")
             lines.append(f"  Begründung: {imp.get('reasoning', '?')}")
         lines.append("")
 
@@ -582,8 +605,9 @@ def format_report_as_md(report: dict[str, Any]) -> str:
         lines.append("*Keine Abweichungen erforderlich — alle Vorgaben sind einhaltbar.*\n")
     else:
         for dev in deviations:
-            severity_icon = {"major": "\U0001F534", "moderate": "\U0001F7E1", "minor": "\U0001F535"}.get(
-                dev.get("severity", "minor"), "")
+            severity_icon = {"major": "\U0001f534", "moderate": "\U0001f7e1", "minor": "\U0001f535"}.get(
+                dev.get("severity", "minor"), ""
+            )
             lines.append(f"### {dev.get('id', '?')}: {dev.get('constraint', '?')} {severity_icon}")
             lines.append(f"**Quelle:** {dev.get('constraint_source', '?')}")
             lines.append(f"**Grund:** {dev.get('reason', '?')}")
@@ -601,6 +625,7 @@ def format_report_as_md(report: dict[str, Any]) -> str:
 # ============================================================
 # DOCX Formatter
 # ============================================================
+
 
 def format_report_as_docx(report: dict[str, Any], output_path) -> None:
     """Format the three-part report as DOCX."""
@@ -644,14 +669,13 @@ def format_report_as_docx(report: dict[str, Any], output_path) -> None:
 
     for req in part_a.get("requirements", []):
         status_label = {
-            "clear": "[Eindeutig]", "ambiguous": "[Mehrdeutig]",
-            "contradicted": "[Widerspruch]", "gap": "[Fehlend]"
+            "clear": "[Eindeutig]",
+            "ambiguous": "[Mehrdeutig]",
+            "contradicted": "[Widerspruch]",
+            "gap": "[Fehlend]",
         }.get(req.get("status", ""), "")
 
-        doc.add_heading(
-            f"{req.get('id', '?')}: {req.get('text', '?')} {status_label}",
-            level=3
-        )
+        doc.add_heading(f"{req.get('id', '?')}: {req.get('text', '?')} {status_label}", level=3)
 
         meta = doc.add_paragraph()
         meta.add_run("Quelle: ").bold = True
@@ -679,10 +703,7 @@ def format_report_as_docx(report: dict[str, Any], output_path) -> None:
         doc.add_paragraph(principle, style="List Number")
 
     for amd in part_b.get("amendments", []):
-        doc.add_heading(
-            f"{amd.get('id', '?')}: {amd.get('finding_title', amd.get('resolves', '?'))}",
-            level=3
-        )
+        doc.add_heading(f"{amd.get('id', '?')}: {amd.get('finding_title', amd.get('resolves', '?'))}", level=3)
         p = doc.add_paragraph()
         p.add_run("Entscheidung: ").bold = True
         p.add_run(amd.get("decision", "?"))
@@ -716,9 +737,7 @@ def format_report_as_docx(report: dict[str, Any], output_path) -> None:
 
     deviations = part_c.get("deviations", [])
     if not deviations:
-        doc.add_paragraph(
-            "Keine Abweichungen erforderlich — alle Vorgaben sind einhaltbar."
-        ).italic = True
+        doc.add_paragraph("Keine Abweichungen erforderlich — alle Vorgaben sind einhaltbar.").italic = True
     else:
         for dev in deviations:
             doc.add_heading(f"{dev.get('id', '?')}: {dev.get('constraint', '?')}", level=3)

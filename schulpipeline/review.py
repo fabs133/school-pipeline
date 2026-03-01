@@ -1,4 +1,5 @@
 """Embedded slide-forge review server for interactive slide editing."""
+
 from __future__ import annotations
 
 import shutil
@@ -38,10 +39,7 @@ def run_review(presentation: Presentation) -> Presentation:
         from slideforge.server import app
         from slideforge.storage import ProjectStore
     except ImportError as e:
-        raise ImportError(
-            "Review server requires extra dependencies. "
-            "Install with: pip install -e '.[review]'"
-        ) from e
+        raise ImportError("Review server requires extra dependencies. Install with: pip install -e '.[review]'") from e
 
     # Use a temporary projects directory
     tmp_dir = Path(tempfile.mkdtemp(prefix="schulpipeline_review_"))
@@ -87,9 +85,7 @@ def run_review(presentation: Presentation) -> Presentation:
                     pass
                 time.sleep(1.0)
             else:
-                raise TimeoutError(
-                    f"Review was not completed within {_REVIEW_TIMEOUT // 60} minutes."
-                )
+                raise TimeoutError(f"Review was not completed within {_REVIEW_TIMEOUT // 60} minutes.")
 
             # Fetch the (possibly edited) presentation
             resp = client.get(f"{base}/api/projects/{presentation.id}")

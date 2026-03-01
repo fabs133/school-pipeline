@@ -10,6 +10,7 @@ from typing import Any
 # Dataclasses
 # ============================================================
 
+
 @dataclass(frozen=True)
 class ColorScheme:
     """A class representing a color scheme for slides and UI elements.
@@ -31,14 +32,15 @@ class ColorScheme:
     :param text_muted: Color used for secondary information.
     :type text_muted: str
     """
-    primary: str       # Headings, title bg
-    secondary: str     # Subtitles, light accents
-    accent: str        # Highlights, call-to-action
-    bg_dark: str       # Dark slide backgrounds
-    bg_light: str      # Content slide backgrounds
-    text_dark: str     # Body text on light bg
-    text_light: str    # Text on dark bg
-    text_muted: str    # Secondary info
+
+    primary: str  # Headings, title bg
+    secondary: str  # Subtitles, light accents
+    accent: str  # Highlights, call-to-action
+    bg_dark: str  # Dark slide backgrounds
+    bg_light: str  # Content slide backgrounds
+    text_dark: str  # Body text on light bg
+    text_light: str  # Text on dark bg
+    text_muted: str  # Secondary info
 
 
 @dataclass(frozen=True)
@@ -56,11 +58,12 @@ class FontConfig:
     :param bullet_size_pt: The size of the bullet font in points.
     :type bullet_size_pt: int
     """
-    heading_family: str     # "Calibri", "Arial", etc.
-    body_family: str        # "Calibri", "Arial", etc.
-    heading_size_pt: int    # 36 (pptx headings)
-    body_size_pt: int       # 18 (pptx body) / 11 (docx body)
-    bullet_size_pt: int     # 16 (pptx bullets) / 11 (docx)
+
+    heading_family: str  # "Calibri", "Arial", etc.
+    body_family: str  # "Calibri", "Arial", etc.
+    heading_size_pt: int  # 36 (pptx headings)
+    body_size_pt: int  # 18 (pptx body) / 11 (docx body)
+    bullet_size_pt: int  # 16 (pptx bullets) / 11 (docx)
 
 
 @dataclass(frozen=True)
@@ -76,9 +79,10 @@ class LayoutConfig:
     :param title_slide_dark: Whether the title slide should have a dark background.
     :type title_slide_dark: bool
     """
-    slide_ratio: str        # "16:9" | "4:3"
-    margin_inches: float    # 0.8 (pptx) / 1.0 (docx)
-    line_spacing: float     # 1.15 (docx paragraph spacing)
+
+    slide_ratio: str  # "16:9" | "4:3"
+    margin_inches: float  # 0.8 (pptx) / 1.0 (docx)
+    line_spacing: float  # 1.15 (docx paragraph spacing)
     title_slide_dark: bool  # True = dark bg title slide
 
 
@@ -97,11 +101,12 @@ class ToneConfig:
     :param instructions: Additional instructions to be injected into the synthesis prompt.
     :type instructions: str
     """
-    register: str           # "formal" | "neutral" | "casual"
-    bullet_style: str       # "terse" | "descriptive" | "sentence"
-    sentence_length: str    # "short" | "medium" | "elaborate"
-    vocabulary_level: str   # "einfach" | "fachlich" | "akademisch"
-    instructions: str       # Free-form, injected into synthesize prompt
+
+    register: str  # "formal" | "neutral" | "casual"
+    bullet_style: str  # "terse" | "descriptive" | "sentence"
+    sentence_length: str  # "short" | "medium" | "elaborate"
+    vocabulary_level: str  # "einfach" | "fachlich" | "akademisch"
+    instructions: str  # Free-form, injected into synthesize prompt
 
 
 @dataclass(frozen=True)
@@ -115,6 +120,7 @@ class VisualStyle:
     :param visual: The visual style configuration associated with this preset.
     :type visual: VisualStyle
     """
+
     colors: ColorScheme
     fonts: FontConfig
     layout: LayoutConfig
@@ -133,6 +139,7 @@ class StylePreset:
     :param tone: Configuration for tonal aspects of the style.
     :type tone: ToneConfig
     """
+
     key: str
     label: str
     visual: VisualStyle
@@ -156,11 +163,12 @@ class VisualSlotConfig:
     :param show_search_hint: Whether to show a search hint.
     :type show_search_hint: bool
     """
+
     enabled: bool
     allowed_types: tuple[str, ...]
-    default_placement: str       # "right" | "center"
+    default_placement: str  # "right" | "center"
     max_per_slide: int
-    placeholder_style: str       # "box" | "outline" | "minimal"
+    placeholder_style: str  # "box" | "outline" | "minimal"
     show_search_hint: bool
 
 
@@ -177,10 +185,11 @@ class VisualSlot:
     :param search_hint: An English term to help with future auto-fill.
     :type search_hint: str
     """
-    type: str            # "diagram" | "photo" | "icon" | "chart" | "screenshot"
-    intent: str          # What the image should show
-    placement: str       # "right" | "center"
-    search_hint: str     # English search term for future auto-fill
+
+    type: str  # "diagram" | "photo" | "icon" | "chart" | "screenshot"
+    intent: str  # What the image should show
+    placement: str  # "right" | "center"
+    search_hint: str  # English search term for future auto-fill
 
 
 # ============================================================
@@ -431,6 +440,7 @@ DISABLED_VISUAL_SLOTS = VisualSlotConfig(
 # Resolution Functions
 # ============================================================
 
+
 def resolve_style(config: Any, overrides: dict | None = None) -> StylePreset:
     """Resolve style from config + CLI overrides.
 
@@ -444,10 +454,7 @@ def resolve_style(config: Any, overrides: dict | None = None) -> StylePreset:
     # Simple string key
     if isinstance(style_spec, str):
         if style_spec not in STYLE_PRESETS:
-            raise ValueError(
-                f"Unknown style preset: '{style_spec}'. "
-                f"Available: {', '.join(STYLE_PRESETS)}"
-            )
+            raise ValueError(f"Unknown style preset: '{style_spec}'. Available: {', '.join(STYLE_PRESETS)}")
         return STYLE_PRESETS[style_spec]
 
     # Dict form: {"base": "clean", "colors": {...}, "tone": {...}}
@@ -502,10 +509,12 @@ def resolve_visual_config(config: Any, overrides: dict | None = None) -> VisualS
 # Color / Helper Functions
 # ============================================================
 
+
 @lru_cache(maxsize=64)
 def _to_rgb(hex_str: str):
     """Convert '#RRGGBB' to pptx RGBColor. Cached."""
     from pptx.dml.color import RGBColor
+
     h = hex_str.lstrip("#")
     if len(h) != 6:
         raise ValueError(f"Invalid hex color: '{hex_str}'")
@@ -520,6 +529,7 @@ def _to_rgb(hex_str: str):
 def _to_docx_rgb(hex_str: str):
     """Convert '#RRGGBB' to docx RGBColor. Cached."""
     from docx.shared import RGBColor
+
     h = hex_str.lstrip("#")
     if len(h) != 6:
         raise ValueError(f"Invalid hex color: '{hex_str}'")
@@ -561,6 +571,7 @@ def _sentence_instruction(sentence_length: str) -> str:
 # ============================================================
 # Internal merge helpers
 # ============================================================
+
 
 def _merge_style(base: StylePreset, overrides: dict) -> StylePreset:
     """Create a new StylePreset by merging partial overrides into a base."""

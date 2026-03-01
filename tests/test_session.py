@@ -8,6 +8,7 @@ from schulpipeline.session import Session, SessionStore, StageSnapshot
 # Session model
 # ============================================================
 
+
 def _make_session(**overrides) -> Session:
     defaults = dict(
         id="test1234",
@@ -45,9 +46,12 @@ def test_session_display_title_from_input():
 
 def test_session_display_title_from_plan():
     snap = StageSnapshot(
-        name="plan", success=True,
+        name="plan",
+        success=True,
         data={"title": "Netzwerktechnik Grundlagen"},
-        errors=[], elapsed_ms=100, backend_used="mock",
+        errors=[],
+        elapsed_ms=100,
+        backend_used="mock",
         completed_at="2025-01-01T00:01:00Z",
     )
     s = _make_session(completed_stages=[snap])
@@ -65,8 +69,18 @@ def test_session_stage_names_completed():
 
 def test_session_stage_data():
     snaps = [
-        StageSnapshot(name="intake", success=True, data={"subject": "IT"}, errors=[], elapsed_ms=0, backend_used="", completed_at=""),
-        StageSnapshot(name="plan", success=False, data={}, errors=["err"], elapsed_ms=0, backend_used="", completed_at=""),
+        StageSnapshot(
+            name="intake",
+            success=True,
+            data={"subject": "IT"},
+            errors=[],
+            elapsed_ms=0,
+            backend_used="",
+            completed_at="",
+        ),
+        StageSnapshot(
+            name="plan", success=False, data={}, errors=["err"], elapsed_ms=0, backend_used="", completed_at=""
+        ),
     ]
     s = _make_session(completed_stages=snaps)
     stage_data = s.stage_data
@@ -78,11 +92,15 @@ def test_session_stage_data():
 # Serialization round-trip
 # ============================================================
 
+
 def test_session_to_dict_and_back():
     snap = StageSnapshot(
-        name="intake", success=True,
+        name="intake",
+        success=True,
         data={"subject": "IT-Sicherheit"},
-        errors=[], elapsed_ms=42, backend_used="groq",
+        errors=[],
+        elapsed_ms=42,
+        backend_used="groq",
         completed_at="2025-01-01T00:00:01Z",
     )
     s = _make_session(
@@ -117,6 +135,7 @@ def test_session_json_roundtrip():
 # SessionStore
 # ============================================================
 
+
 def test_store_create_and_load(tmp_path):
     store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
     session = store.create(task_input="Test task", input_type="text")
@@ -137,6 +156,7 @@ def test_store_load_nonexistent(tmp_path):
 
 def test_store_save_updates(tmp_path):
     import time
+
     store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
     session = store.create(task_input="Original")
     original_updated = session.updated_at
@@ -184,6 +204,7 @@ def test_store_list_with_status_filter(tmp_path):
 
 def test_store_find_latest(tmp_path):
     import time
+
     store = SessionStore(sessions_dir=str(tmp_path / "sessions"))
     store.create(task_input="First")
     time.sleep(0.01)  # ensure distinct timestamps
@@ -202,6 +223,7 @@ def test_store_find_latest_empty(tmp_path):
 # ============================================================
 # Session purge
 # ============================================================
+
 
 def test_session_purge_by_count(tmp_path):
     """Purge removes sessions beyond max_count (oldest first)."""

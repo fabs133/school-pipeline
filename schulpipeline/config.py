@@ -147,9 +147,11 @@ ENV_KEY_MAP: dict[str, str] = {
 
 def _resolve_env_vars(value: str) -> str:
     """Replace ${VAR} with environment variable values."""
+
     def replacer(match):
         var_name = match.group(1)
         return os.environ.get(var_name, "")
+
     return re.sub(r"\$\{(\w+)\}", replacer, str(value))
 
 

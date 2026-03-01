@@ -80,6 +80,7 @@ async def test_live_full_pipeline_stages(live_router, live_config, tmp_path):
 
     # Verify output file exists
     from pathlib import Path
+
     output_path = context["artifact"]["file_path"]
     assert Path(output_path).exists(), f"Output not created: {output_path}"
     assert output_path.endswith(".pptx")

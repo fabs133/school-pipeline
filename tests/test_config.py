@@ -1,6 +1,5 @@
 """Tests for config loading and backend discovery."""
 
-
 from schulpipeline.config import BackendConfig, PipelineConfig, load_config, validate_config
 
 
@@ -54,6 +53,7 @@ def test_config_overrides():
 # ============================================================
 # validate_config()
 # ============================================================
+
 
 def test_validate_config_valid(mock_config):
     """Valid config returns no errors."""

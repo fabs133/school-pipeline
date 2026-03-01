@@ -174,6 +174,7 @@ class SynthesizeStage(BaseStage):
     :return: A dictionary containing the synthesized data.
     :rtype: dict[str, Any]
     """
+
     name = "synthesize"
     spec_path = "specs/synthesis.json"
     required_context = frozenset({"plan", "research", "intake"})
@@ -273,12 +274,14 @@ class SynthesizeStage(BaseStage):
         existing_ids = {s["section_id"] for s in data.get("sections", [])}
         for plan_section in plan["sections"]:
             if plan_section["id"] not in existing_ids:
-                data.setdefault("sections", []).append({
-                    "section_id": plan_section["id"],
-                    "heading": plan_section["title"],
-                    "content": plan_section["purpose"],
-                    "bullet_points": [],
-                    "speaker_notes": None,
-                })
+                data.setdefault("sections", []).append(
+                    {
+                        "section_id": plan_section["id"],
+                        "heading": plan_section["title"],
+                        "content": plan_section["purpose"],
+                        "bullet_points": [],
+                        "speaker_notes": None,
+                    }
+                )
 
         return data

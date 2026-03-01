@@ -50,7 +50,7 @@ async def test_groq_json_response(live_router, require_groq):
     result = await live_router.complete(
         stage="plan",
         messages=[
-            {"role": "system", "content": "Antworte mit JSON: {\"antwort\": \"...\"}"},
+            {"role": "system", "content": 'Antworte mit JSON: {"antwort": "..."}'},
             {"role": "user", "content": "Was ist die Farbe des Himmels?"},
         ],
         temperature=0.0,
@@ -58,6 +58,7 @@ async def test_groq_json_response(live_router, require_groq):
         response_format={"type": "json_object"},
     )
     import json
+
     data = json.loads(result.content)
     assert isinstance(data, dict)
 

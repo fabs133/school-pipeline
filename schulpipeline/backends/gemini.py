@@ -21,6 +21,7 @@ class GeminiBackend:
     :return: Tuple containing the converted message and a list of formatted messages.
     :rtype: tuple[str, list[dict]]
     """
+
     name: str = "gemini"
     api_key: str = ""
     model: str = "gemini-2.5-flash"
@@ -48,10 +49,12 @@ class GeminiBackend:
             gemini_role = "model" if role == "assistant" else "user"
 
             if isinstance(content, str):
-                contents.append({
-                    "role": gemini_role,
-                    "parts": [{"text": content}],
-                })
+                contents.append(
+                    {
+                        "role": gemini_role,
+                        "parts": [{"text": content}],
+                    }
+                )
             elif isinstance(content, list):
                 # Multimodal content (text + images)
                 parts = []
@@ -67,12 +70,14 @@ class GeminiBackend:
                                 # data:image/jpeg;base64,... -> inline_data
                                 mime, _, b64 = url.partition(";base64,")
                                 mime = mime.replace("data:", "")
-                                parts.append({
-                                    "inlineData": {
-                                        "mimeType": mime,
-                                        "data": b64,
+                                parts.append(
+                                    {
+                                        "inlineData": {
+                                            "mimeType": mime,
+                                            "data": b64,
+                                        }
                                     }
-                                })
+                                )
                 contents.append({"role": gemini_role, "parts": parts})
 
         return system, contents
@@ -177,9 +182,7 @@ class GeminiBackend:
         :return: The generated LLMResponse object.
         :rtype: LLMResponse
         """
-        return await asyncio.to_thread(
-            self._sync_generate, messages, temperature, max_tokens, response_format
-        )
+        return await asyncio.to_thread(self._sync_generate, messages, temperature, max_tokens, response_format)
 
     async def complete_vision(
         self,

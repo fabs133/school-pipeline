@@ -136,7 +136,15 @@
       "mcp__gamedev-mcp__docgen_preview",
       "mcp__gamedev-mcp__docgen_run",
       "Bash(python -c \"import py_compile; import glob; errors=[]; [errors.append\\(f\\) if py_compile.compile\\(f, doraise=True\\) is None else None for f in glob.glob\\(''slideforge/**/*.py'', recursive=True\\) + glob.glob\\(''tests/**/*.py'', recursive=True\\)]\")",
-      "Bash(python -c \"import py_compile, glob; [py_compile.compile\\(f, doraise=True\\) for f in glob.glob\\(''schulpipeline/**/*.py'', recursive=True\\)]\")"
+      "Bash(python -c \"import py_compile, glob; [py_compile.compile\\(f, doraise=True\\) for f in glob.glob\\(''schulpipeline/**/*.py'', recursive=True\\)]\")",
+      "Bash(python -m ruff check --fix schulpipeline/review.py)",
+      "Bash(python -m ruff check schulpipeline/)",
+      "Bash(python -m ruff check --fix schulpipeline/)",
+      "Bash(ruff check slideforge/ tests/)",
+      "Bash(python -c \"from schulpipeline.worksheet import DecomposeStage; print\\(''OK''\\)\")",
+      "Bash(ruff check --fix tests/test_research_web.py tests/test_review.py)",
+      "Bash(ruff format slideforge/ tests/)",
+      "Bash(ruff format schulpipeline/ tests/)"
     ],
     "additionalDirectories": [
       "C:\\Users\\fbrmp\\.claude\\projects\\c--Users-fbrmp-Projekte-school-pipeline",

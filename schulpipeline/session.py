@@ -30,9 +30,11 @@ from typing import Any
 # Session Model
 # ============================================================
 
+
 @dataclass
 class StageSnapshot:
     """Captured result of a completed stage."""
+
     name: str
     success: bool
     data: dict[str, Any]
@@ -52,18 +54,18 @@ class Session:
     updated_at: str
 
     # Input
-    task_input: str                     # Original task text or file path
-    input_type: str                     # "text" | "image" | "file"
+    task_input: str  # Original task text or file path
+    input_type: str  # "text" | "image" | "file"
 
     # Preset
-    preset_key: str | None = None       # Quick-preset key if used
-    output_type: str | None = None      # Output preset key
-    subject: str | None = None          # Subject preset key
+    preset_key: str | None = None  # Quick-preset key if used
+    output_type: str | None = None  # Output preset key
+    subject: str | None = None  # Subject preset key
     preset_overrides: dict[str, Any] = field(default_factory=dict)
 
     # Pipeline state
-    status: str = "created"             # created | running | paused | completed | failed
-    current_stage: str = ""             # Which stage is currently active
+    status: str = "created"  # created | running | paused | completed | failed
+    current_stage: str = ""  # Which stage is currently active
     completed_stages: list[StageSnapshot] = field(default_factory=list)
     failed_stage: str | None = None
     failure_errors: list[str] = field(default_factory=list)
@@ -235,6 +237,7 @@ class Session:
 # Session Store — file-based persistence
 # ============================================================
 
+
 class SessionStore:
     """File-based session persistence.
 
@@ -366,9 +369,7 @@ class SessionStore:
             updated = entry.get("updated_at", "")
             if updated:
                 try:
-                    ts = datetime.fromisoformat(updated.rstrip("Z")).replace(
-                        tzinfo=timezone.utc
-                    )
+                    ts = datetime.fromisoformat(updated.rstrip("Z")).replace(tzinfo=timezone.utc)
                     age = (now - ts).days
                     if age > max_age_days:
                         to_delete.append(sid)
@@ -454,6 +455,7 @@ class SessionStore:
 # Session-aware Pipeline Runner
 # ============================================================
 
+
 class SessionRunner:
     """Runs a pipeline with session persistence.
 
@@ -499,6 +501,7 @@ class SessionRunner:
 
         # Resolve style and visual configuration
         from .styles import resolve_style, resolve_visual_config
+
         context["style"] = resolve_style(self.pipeline.config, overrides)
         context["visual_slots"] = resolve_visual_config(self.pipeline.config, overrides)
 
@@ -540,8 +543,14 @@ class SessionRunner:
 
             if not result.success:
                 if on_progress:
-                    on_progress("stage_error", stage.name, i, total_stages,
-                                elapsed_ms=result.metadata.get("elapsed_ms", 0), errors=result.errors)
+                    on_progress(
+                        "stage_error",
+                        stage.name,
+                        i,
+                        total_stages,
+                        elapsed_ms=result.metadata.get("elapsed_ms", 0),
+                        errors=result.errors,
+                    )
                 session.status = "failed"
                 session.failed_stage = stage.name
                 session.failure_errors = result.errors
@@ -570,8 +579,7 @@ class SessionRunner:
             self.store.save(session)
 
             if on_progress:
-                on_progress("stage_done", stage.name, i, total_stages,
-                            elapsed_ms=result.metadata.get("elapsed_ms", 0))
+                on_progress("stage_done", stage.name, i, total_stages, elapsed_ms=result.metadata.get("elapsed_ms", 0))
 
         # All stages done
         session.status = "completed"
@@ -591,7 +599,9 @@ class SessionRunner:
         self.store.save(session)
         return session
 
-    async def retry_from(self, session: Session, stage_name: str, preset=None, overrides: dict | None = None, on_progress=None) -> Session:
+    async def retry_from(
+        self, session: Session, stage_name: str, preset=None, overrides: dict | None = None, on_progress=None
+    ) -> Session:
         """Re-run a session starting from a specific stage.
 
         Drops all stage snapshots from `stage_name` onwards and re-runs.
@@ -601,18 +611,12 @@ class SessionRunner:
         stage_order = resolve_stage_sequence(preset)
 
         if stage_name not in stage_order:
-            raise ValueError(
-                f"Unknown stage '{stage_name}' for this preset. "
-                f"Valid stages: {stage_order}"
-            )
+            raise ValueError(f"Unknown stage '{stage_name}' for this preset. Valid stages: {stage_order}")
 
         idx = stage_order.index(stage_name)
 
         # Drop stages from this point onwards
-        session.completed_stages = [
-            s for s in session.completed_stages
-            if s.name in stage_order[:idx]
-        ]
+        session.completed_stages = [s for s in session.completed_stages if s.name in stage_order[:idx]]
         session.status = "running"
         session.failed_stage = None
         session.failure_errors = []
@@ -624,6 +628,7 @@ class SessionRunner:
 # ============================================================
 # Helpers
 # ============================================================
+
 
 def _short_id() -> str:
     """Generate a short, human-friendly session ID."""

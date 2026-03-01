@@ -41,27 +41,30 @@ logger = logging.getLogger("schulpipeline.agents")
 # Agent Protocol
 # ============================================================
 
+
 @dataclass
 class AgentResult:
     """Result from an agent execution."""
+
     success: bool
-    output_dir: str                    # Path to generated project
-    files_created: list[str]           # List of file paths
+    output_dir: str  # Path to generated project
+    files_created: list[str]  # List of file paths
     errors: list[str] = field(default_factory=list)
-    cost_estimate_usd: float = 0.0     # Estimated cost (shown before execution)
-    cost_actual_usd: float = 0.0       # Actual cost after execution
+    cost_estimate_usd: float = 0.0  # Estimated cost (shown before execution)
+    cost_actual_usd: float = 0.0  # Actual cost after execution
     agent_name: str = ""
-    log: str = ""                      # Agent stdout/stderr
+    log: str = ""  # Agent stdout/stderr
 
 
 @dataclass
 class AgentConfig:
     """Configuration for a specific agent."""
+
     name: str
     enabled: bool = False
     api_key: str = ""
     model: str = ""
-    max_cost_usd: float = 1.0         # Safety cap — abort if estimate exceeds this
+    max_cost_usd: float = 1.0  # Safety cap — abort if estimate exceeds this
     extra: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -106,6 +109,7 @@ class BaseAgent(ABC):
 # Project Spec — the contract between pipeline and agent
 # ============================================================
 
+
 @dataclass
 class ProjectSpec:
     """Structured project specification derived from pipeline synthesis.
@@ -113,15 +117,16 @@ class ProjectSpec:
     This is what gets handed to an agent. It's language/framework aware
     and contains enough detail for an agent to build the project.
     """
+
     title: str
     description: str
-    language: str                      # python, javascript, java, csharp, etc.
-    framework: str = ""                # flask, react, spring, etc.
-    project_type: str = ""             # cli, web, api, library, fullstack
+    language: str  # python, javascript, java, csharp, etc.
+    framework: str = ""  # flask, react, spring, etc.
+    project_type: str = ""  # cli, web, api, library, fullstack
 
     # Structure
     modules: list[ModuleSpec] = field(default_factory=list)
-    entry_point: str = ""              # e.g. "main.py", "src/index.ts"
+    entry_point: str = ""  # e.g. "main.py", "src/index.ts"
 
     # Requirements
     dependencies: list[str] = field(default_factory=list)
@@ -195,6 +200,7 @@ class ModuleSpec:
     :param files: A list of file specifications within the module.
     :type files: list[FileSpec]
     """
+
     name: str
     purpose: str
     files: list[FileSpec] = field(default_factory=list)
@@ -211,7 +217,8 @@ class FileSpec:
     :param key_functions: List of key functions in the file.
     :type key_functions: list[str]
     """
-    path: str                          # e.g. "src/models/user.py"
+
+    path: str  # e.g. "src/models/user.py"
     description: str
     key_functions: list[str] = field(default_factory=list)
 
@@ -219,6 +226,7 @@ class FileSpec:
 # ============================================================
 # Agent: Local LLM (free — uses existing pipeline backends)
 # ============================================================
+
 
 class LocalLLMAgent(BaseAgent):
     """Generates code file-by-file using the pipeline's LLM backends.
@@ -258,7 +266,8 @@ class LocalLLMAgent(BaseAgent):
             :type output_dir: Path
             :return: The execution result.
             :rtype: AgentResult
-        """
+            """
+
         self.router = router
 
     async def estimate_cost(self, spec: ProjectSpec) -> float:
@@ -405,6 +414,7 @@ class LocalLLMAgent(BaseAgent):
 # Agent: Claude Code (credits)
 # ============================================================
 
+
 class ClaudeCodeAgent(BaseAgent):
     """Delegates to Claude Code CLI for project generation.
 
@@ -480,9 +490,12 @@ class ClaudeCodeAgent(BaseAgent):
         )
 
         cmd = [
-            "claude", "code",
-            "--message", prompt,
-            "--directory", str(output_dir),
+            "claude",
+            "code",
+            "--message",
+            prompt,
+            "--directory",
+            str(output_dir),
         ]
 
         if self.config.model:
@@ -529,6 +542,7 @@ class ClaudeCodeAgent(BaseAgent):
 # Agent: OpenAI Codex CLI (credits)
 # ============================================================
 
+
 class CodexAgent(BaseAgent):
     """Delegates to OpenAI Codex CLI for project generation.
 
@@ -567,7 +581,8 @@ class CodexAgent(BaseAgent):
             :type output_dir: Path
             :return: Result of the execution.
             :rtype: AgentResult
-        """
+            """
+
         self.config = config
 
     async def estimate_cost(self, spec: ProjectSpec) -> float:
@@ -680,6 +695,7 @@ def get_available_agents(agent_configs: dict[str, AgentConfig], router=None) -> 
 # Spec Builder — converts synthesis output to ProjectSpec
 # ============================================================
 
+
 def build_project_spec(synthesis: dict[str, Any], intake: dict[str, Any]) -> ProjectSpec:
     """Convert pipeline synthesis output into a ProjectSpec for agents.
 
@@ -706,23 +722,24 @@ def build_project_spec(synthesis: dict[str, Any], intake: dict[str, Any]) -> Pro
 
         # Create a file spec for this module
         module_name = _slugify(section.get("heading", "module"))
-        files.append(FileSpec(
-            path=_infer_file_path(module_name, language),
-            description=content or section.get("heading", ""),
-            key_functions=[b for b in bullets if len(b) < 60],  # Short bullets → function hints
-        ))
+        files.append(
+            FileSpec(
+                path=_infer_file_path(module_name, language),
+                description=content or section.get("heading", ""),
+                key_functions=[b for b in bullets if len(b) < 60],  # Short bullets → function hints
+            )
+        )
 
-        modules.append(ModuleSpec(
-            name=section.get("heading", ""),
-            purpose=section.get("content", section.get("heading", "")),
-            files=files,
-        ))
+        modules.append(
+            ModuleSpec(
+                name=section.get("heading", ""),
+                purpose=section.get("content", section.get("heading", "")),
+                files=files,
+            )
+        )
 
     # Build full spec text from synthesis
-    full_text = "\n\n".join(
-        f"## {s.get('heading', '')}\n{s.get('content', '')}"
-        for s in synthesis.get("sections", [])
-    )
+    full_text = "\n\n".join(f"## {s.get('heading', '')}\n{s.get('content', '')}" for s in synthesis.get("sections", []))
 
     requirements = intake.get("constraints", {}).get("specific_requirements", [])
 
@@ -744,6 +761,7 @@ def build_project_spec(synthesis: dict[str, Any], intake: dict[str, Any]) -> Pro
 # ============================================================
 # Helpers
 # ============================================================
+
 
 def _detect_language(text: str) -> str:
     """Detect programming language from task text."""
@@ -828,8 +846,16 @@ def _infer_file_path(module_name: str, language: str) -> str:
     :return: The inferred file path.
     :rtype: str
     """
-    ext = {"python": ".py", "javascript": ".js", "typescript": ".ts",
-           "java": ".java", "csharp": ".cs", "php": ".php", "go": ".go", "rust": ".rs"}
+    ext = {
+        "python": ".py",
+        "javascript": ".js",
+        "typescript": ".ts",
+        "java": ".java",
+        "csharp": ".cs",
+        "php": ".php",
+        "go": ".go",
+        "rust": ".rs",
+    }
     return f"src/{module_name}{ext.get(language, '.py')}"
 
 
@@ -841,8 +867,7 @@ def _infer_entry_point(language: str, project_type: str) -> str:
     :return: The inferred entry point file name.
     :rtype: str
     """
-    entries = {"python": "main.py", "javascript": "src/index.js",
-               "typescript": "src/index.ts", "java": "src/Main.java"}
+    entries = {"python": "main.py", "javascript": "src/index.js", "typescript": "src/index.ts", "java": "src/Main.java"}
     return entries.get(language, "main.py")
 
 
@@ -885,8 +910,10 @@ def _run_command(spec: ProjectSpec) -> str:
     :return: Command string to be executed.
     :rtype: str
     """
-    cmds = {"python": f"python {spec.entry_point}",
-            "javascript": f"node {spec.entry_point}",
-            "typescript": f"npx ts-node {spec.entry_point}",
-            "java": f"java {spec.entry_point}"}
+    cmds = {
+        "python": f"python {spec.entry_point}",
+        "javascript": f"node {spec.entry_point}",
+        "typescript": f"npx ts-node {spec.entry_point}",
+        "java": f"java {spec.entry_point}",
+    }
     return cmds.get(spec.language, f"python {spec.entry_point}")
