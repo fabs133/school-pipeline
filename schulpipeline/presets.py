@@ -440,6 +440,17 @@ class ResolvedPreset:
     quality_instructions: str = ""
 
     def __post_init__(self):
+        """Initialize the system context and quality instructions.
+
+        :param domain_context: The core domain or topic of the conversation.
+        :type domain_context: str
+        :param vocabulary_hints: Optional list of key terms to use in responses.
+        :type vocabulary_hints: List[str]
+        :param research_bias: Optional preferred sources for information.
+        :type research_bias: str
+
+        :raises ValueError: If `domain_context` is empty.
+        """
         self.system_context = self._build_system_context()
         self.quality_instructions = self._build_quality_instructions()
 
@@ -469,9 +480,6 @@ class ResolvedPreset:
         if c.get("bullets_per_slide"):
             lo, hi = c["bullets_per_slide"]
             instructions.append(f"Pro Folie {lo}-{hi} Stichpunkte.")
-        if c.get("words_per_bullet"):
-            lo, hi = c["words_per_bullet"]
-            instructions.append(f"Stichpunkte: {lo}-{hi} Wörter, keine ganzen Sätze.")
         if c.get("speaker_notes"):
             instructions.append("Speaker Notes für jede Inhaltsfolie (2-3 Sätze).")
         if c.get("sources_required"):

@@ -21,11 +21,14 @@ dependencies = [
     "beautifulsoup4>=4.12",
     "Pillow>=10.0",
     "python-dotenv>=1.0",
+    "pydantic>=2.5",
+    "lxml>=4.9",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4", "pre-commit>=3.5"]
 pdf = ["pdfplumber>=0.9"]
+review = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "httpx>=0.27"]
 ollama = []  # no extra deps, just a config flag
 
 [project.scripts]

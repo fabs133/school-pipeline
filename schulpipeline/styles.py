@@ -12,6 +12,25 @@ from typing import Any
 
 @dataclass(frozen=True)
 class ColorScheme:
+    """A class representing a color scheme for slides and UI elements.
+
+    :param primary: Color used for headings and title backgrounds.
+    :type primary: str
+    :param secondary: Color used for subtitles and light accents.
+    :type secondary: str
+    :param accent: Color used for highlights and call-to-action buttons.
+    :type accent: str
+    :param bg_dark: Color used for dark slide backgrounds.
+    :type bg_dark: str
+    :param bg_light: Color used for content slide backgrounds.
+    :type bg_light: str
+    :param text_dark: Color used for body text on light backgrounds.
+    :type text_dark: str
+    :param text_light: Color used for text on dark backgrounds.
+    :type text_light: str
+    :param text_muted: Color used for secondary information.
+    :type text_muted: str
+    """
     primary: str       # Headings, title bg
     secondary: str     # Subtitles, light accents
     accent: str        # Highlights, call-to-action
@@ -24,6 +43,19 @@ class ColorScheme:
 
 @dataclass(frozen=True)
 class FontConfig:
+    """A configuration class for font settings in documents.
+
+    :param heading_family: The font family for headings.
+    :type heading_family: str
+    :param body_family: The font family for body text.
+    :type body_family: str
+    :param heading_size_pt: The size of the heading font in points.
+    :type heading_size_pt: int
+    :param body_size_pt: The size of the body text font in points.
+    :type body_size_pt: int
+    :param bullet_size_pt: The size of the bullet font in points.
+    :type bullet_size_pt: int
+    """
     heading_family: str     # "Calibri", "Arial", etc.
     body_family: str        # "Calibri", "Arial", etc.
     heading_size_pt: int    # 36 (pptx headings)
@@ -33,6 +65,17 @@ class FontConfig:
 
 @dataclass(frozen=True)
 class LayoutConfig:
+    """A configuration class for layout settings.
+
+    :param slide_ratio: The aspect ratio of the slides as a string.
+    :type slide_ratio: str
+    :param margin_inches: The margin size in inches.
+    :type margin_inches: float
+    :param line_spacing: The line spacing factor.
+    :type line_spacing: float
+    :param title_slide_dark: Whether the title slide should have a dark background.
+    :type title_slide_dark: bool
+    """
     slide_ratio: str        # "16:9" | "4:3"
     margin_inches: float    # 0.8 (pptx) / 1.0 (docx)
     line_spacing: float     # 1.15 (docx paragraph spacing)
@@ -41,6 +84,19 @@ class LayoutConfig:
 
 @dataclass(frozen=True)
 class ToneConfig:
+    """A configuration class for setting the tone and style of text generation.
+
+    :param register: The formality level of the tone ("formal", "neutral", or "casual").
+    :type register: str
+    :param bullet_style: The style of bullet points used ("terse", "descriptive", or "sentence").
+    :type bullet_style: str
+    :param sentence_length: The length of sentences generated ("short", "medium", or "elaborate").
+    :type sentence_length: str
+    :param vocabulary_level: The level of vocabulary used ("einfach" for simple, "fachlich" for professional, or "akademisch" for academic).
+    :type vocabulary_level: str
+    :param instructions: Additional instructions to be injected into the synthesis prompt.
+    :type instructions: str
+    """
     register: str           # "formal" | "neutral" | "casual"
     bullet_style: str       # "terse" | "descriptive" | "sentence"
     sentence_length: str    # "short" | "medium" | "elaborate"
@@ -50,6 +106,15 @@ class ToneConfig:
 
 @dataclass(frozen=True)
 class VisualStyle:
+    """A data class representing a style preset with a unique key, label, and associated visual style.
+
+    :param key: The unique identifier for the style preset.
+    :type key: str
+    :param label: A human-readable label for the style preset.
+    :type label: str
+    :param visual: The visual style configuration associated with this preset.
+    :type visual: VisualStyle
+    """
     colors: ColorScheme
     fonts: FontConfig
     layout: LayoutConfig
@@ -57,6 +122,17 @@ class VisualStyle:
 
 @dataclass(frozen=True)
 class StylePreset:
+    """A class representing a style preset with key, label, visual, and tone configurations.
+
+    :param key: Unique identifier for the style preset.
+    :type key: str
+    :param label: Human-readable name of the style preset.
+    :type label: str
+    :param visual: Configuration for visual aspects of the style.
+    :type visual: VisualStyle
+    :param tone: Configuration for tonal aspects of the style.
+    :type tone: ToneConfig
+    """
     key: str
     label: str
     visual: VisualStyle
@@ -65,6 +141,21 @@ class StylePreset:
 
 @dataclass(frozen=True)
 class VisualSlotConfig:
+    """A configuration class for visual slots.
+
+    :param enabled: Whether the slot is enabled.
+    :type enabled: bool
+    :param allowed_types: A tuple of allowed types for the slot.
+    :type allowed_types: tuple[str, ...]
+    :param default_placement: The default placement of the slot ("right" or "center").
+    :type default_placement: str
+    :param max_per_slide: Maximum number of slots per slide.
+    :type max_per_slide: int
+    :param placeholder_style: Style of the placeholder ("box", "outline", or "minimal").
+    :type placeholder_style: str
+    :param show_search_hint: Whether to show a search hint.
+    :type show_search_hint: bool
+    """
     enabled: bool
     allowed_types: tuple[str, ...]
     default_placement: str       # "right" | "center"
@@ -75,6 +166,17 @@ class VisualSlotConfig:
 
 @dataclass
 class VisualSlot:
+    """A class representing a visual slot configuration.
+
+    :param type: The type of the visual element ("diagram", "photo", "icon", "chart", or "screenshot").
+    :type type: str
+    :param intent: The intended purpose or subject of the image.
+    :type intent: str
+    :param placement: The position where the visual should be placed ("right" or "center").
+    :type placement: str
+    :param search_hint: An English term to help with future auto-fill.
+    :type search_hint: str
+    """
     type: str            # "diagram" | "photo" | "icon" | "chart" | "screenshot"
     intent: str          # What the image should show
     placement: str       # "right" | "center"
@@ -308,7 +410,7 @@ DEFAULT_STYLE = STYLE_PRESETS["clean"]
 
 DEFAULT_VISUAL_SLOTS = VisualSlotConfig(
     enabled=True,
-    allowed_types=("diagram", "photo", "icon", "chart", "screenshot"),
+    allowed_types=("diagram", "photo", "icon", "chart", "screenshot", "logo"),
     default_placement="right",
     max_per_slide=1,
     placeholder_style="box",

@@ -91,16 +91,19 @@ Regeln:
 _DEFAULT_TONE_LINE = "- Sprache: Deutsch, sachlich, auf Berufsschul-Niveau"
 
 
-def _build_tone_block(tone) -> str:
+def _build_tone_block(tone, skip_bullet_style: bool = False) -> str:
     """Build a tone instruction block from a ToneConfig."""
     from ..styles import _bullet_instruction, _sentence_instruction
 
-    block = f"""
-Stilanweisungen:
-- Register: {tone.register}
-- Stichpunkte: {_bullet_instruction(tone.bullet_style)}
-- Satzlänge: {_sentence_instruction(tone.sentence_length)}
-- Vokabular: {tone.vocabulary_level}"""
+    lines = [
+        f"- Register: {tone.register}",
+    ]
+    if not skip_bullet_style:
+        lines.append(f"- Stichpunkte: {_bullet_instruction(tone.bullet_style)}")
+    lines.append(f"- Satzlänge: {_sentence_instruction(tone.sentence_length)}")
+    lines.append(f"- Vokabular: {tone.vocabulary_level}")
+
+    block = "\nStilanweisungen:\n" + "\n".join(lines)
     if tone.instructions:
         block += f"\n{tone.instructions}"
     return block
@@ -133,15 +136,60 @@ Regeln:
 - type "chart" für Daten/Statistiken/Vergleiche
 - type "photo" für reale Objekte/Orte/Personen
 - type "icon" für abstrakte Konzepte
-- type "screenshot" für Software/UI-Beispiele"""
+- type "screenshot" für Software/UI-Beispiele
+- type "logo" für Firmen-/Organisations-/Technologie-Logos"""
+
+
+def _build_slideforge_style_block(preset) -> str:
+    """Inject a strong bullet-format directive based on the resolved PresentationStyle."""
+    from slideforge.prompts import get_style_instruction
+
+    from ..artifacts.converter import _PRESET_STYLE_MAP
+
+    if preset:
+        from slideforge.models import PresentationStyle
+        pres_style = _PRESET_STYLE_MAP.get(preset.style, PresentationStyle.SENTENCES)
+    else:
+        pres_style = "sentences"
+
+    style_val = pres_style.value if hasattr(pres_style, "value") else pres_style
+    instruction = get_style_instruction(style_val)
+
+    return f"""
+
+WICHTIG — Bullet-Format:
+{instruction}
+Halte dich STRIKT an dieses Format für ALLE bullet_points."""
 
 
 class SynthesizeStage(BaseStage):
+    """A stage for synthesizing data based on a plan and research.
+
+    :param context: A dictionary containing the execution context with keys "plan", "research", and "intake".
+    :type context: dict[str, Any]
+    :param backend: The backend object used for executing the synthesis.
+    :type backend: Any
+    :param config: Configuration settings for the synthesis process.
+    :type config: Any
+    :return: A dictionary containing the synthesized data.
+    :rtype: dict[str, Any]
+    """
     name = "synthesize"
     spec_path = "specs/synthesis.json"
     required_context = frozenset({"plan", "research", "intake"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes a plan using the provided context and backend.
+
+        :param context: A dictionary containing the execution context with keys "plan", "research", "intake", and optionally "preset".
+        :type context: dict[str, Any]
+        :param backend: The backend object used for executing the plan.
+        :type backend: Any
+        :param config: Configuration settings for the execution.
+        :type config: Any
+        :return: A dictionary containing the results of the execution.
+        :rtype: dict[str, Any]
+        """
         plan = context["plan"]
         research = context["research"]
         intake = context["intake"]
@@ -156,11 +204,17 @@ class SynthesizeStage(BaseStage):
         }.get(artifact_type, SYNTHESIZE_MD_PROMPT)
 
         # Tone: from style if available, else hardcoded default
+        # For PPTX: skip the bullet_style line — slideforge style instruction handles it
+        is_pptx = artifact_type == "pptx"
         style = context.get("style")
         if style:
-            prompt += _build_tone_block(style.tone)
+            prompt += _build_tone_block(style.tone, skip_bullet_style=is_pptx)
         else:
             prompt += f"\n{_DEFAULT_TONE_LINE}"
+
+        # Inject slideforge style instruction for bullet format control
+        if is_pptx:
+            prompt += _build_slideforge_style_block(preset)
 
         # Visual slot instruction (only if enabled)
         visual_slots = context.get("visual_slots")

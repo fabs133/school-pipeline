@@ -88,6 +88,17 @@ def _read_text_with_fallback(path: Path) -> str:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Builds an argument parser for the Schulaufgaben pipeline.
+
+    :param config: Path to the configuration file. Default is "config.yaml".
+    :type config: str
+    :param log_level: Logging level. Options are "DEBUG", "INFO", "WARNING", "ERROR". Default is None.
+    :type log_level: str, optional
+    :param json_logs: If True, logs will be output in JSON format. Default is False.
+    :type json_logs: bool, optional
+    :return: Configured argument parser.
+    :rtype: argparse.ArgumentParser
+    """
     parser = argparse.ArgumentParser(
         prog="schulpipeline",
         description="Schulaufgaben automatisieren — Präsentationen, Dokumente, Antworten",
@@ -116,6 +127,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--yes", "-y", action="store_true", help="Kosten-Warnung überspringen")
     run_p.add_argument("--agent", choices=["local_llm"],
                        help="Code-Generierungs-Agent (nur fuer Coding-Presets)")
+    run_p.add_argument("--review", action="store_true",
+                       help="Folien vor Erstellung im Browser bearbeiten")
 
     # --- resume ---
     resume_p = subparsers.add_parser("resume", help="Letzte/bestimmte Session fortsetzen")
@@ -237,6 +250,16 @@ async def cmd_cost_estimate(args: argparse.Namespace, config) -> int:
 
 
 async def cmd_run(args: argparse.Namespace, config) -> int:
+    """Run a command with the provided arguments.
+
+    :param args: Command-line arguments parsed by argparse.
+    :type args: argparse.Namespace
+    :param config: Configuration object for the application.
+    :type config: dict
+    :return: Exit code of the command.
+    :rtype: int
+    :raises ValueError: If required input is missing and not provided via arguments or configuration.
+    """
     raw_input = _get_input(args)
     if raw_input is None:
         print("Fehler: Aufgabentext oder --input Datei angeben", file=sys.stderr)
@@ -311,6 +334,25 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
         await router.close()
 
     if session.status == "completed":
+        # Review flow: let user edit slides in browser before final PPTX
+        if getattr(args, "review", False) and session.output_format == "pptx":
+            from .artifacts.converter import synthesis_to_presentation
+            from .review import run_review
+
+            synth_data = session.stage_data.get("synthesize", {})
+            presentation = synthesis_to_presentation(
+                synth_data, preset=preset,
+                name=synth_data.get("title", "Review"),
+            )
+            edited = run_review(presentation)
+
+            # Re-render the edited presentation
+            from slideforge.renderer import render_pptx
+
+            output_path = Path(session.output_path)
+            render_pptx(edited, output_path)
+            print(f"  Aktualisiert: {output_path}")
+
         print(f"\n{SYM_OK} Fertig in {session.total_elapsed_ms / 1000:.1f}s")
         print(f"  Datei:   {session.output_path}")
         print(f"  Kosten:  ${session.total_cost_usd:.4f}")
@@ -325,6 +367,16 @@ async def cmd_run(args: argparse.Namespace, config) -> int:
 
 
 async def cmd_resume(args: argparse.Namespace, config) -> int:
+    """Resumes a previously saved session.
+
+    :param args: Command-line arguments containing the session ID.
+    :type args: argparse.Namespace
+    :param config: Configuration settings for the application.
+    :type config: dict
+    :return: Exit code indicating success or failure.
+    :rtype: int
+    :raises FileNotFoundError: If the specified session file does not exist.
+    """
     from .session import SessionRunner, SessionStore
 
     store = SessionStore()
@@ -383,6 +435,15 @@ async def cmd_resume(args: argparse.Namespace, config) -> int:
 
 
 def cmd_sessions(args, config) -> int:
+    """List sessions based on provided arguments.
+
+    :param args: Command line arguments containing session filters and output options.
+    :type args: argparse.Namespace
+    :param config: Configuration settings for the application.
+    :type config: dict
+    :return: Exit status code.
+    :rtype: int
+    """
     from .session import SessionStore
 
     store = SessionStore()
@@ -417,6 +478,16 @@ def cmd_sessions(args, config) -> int:
 
 
 def cmd_show(args, config) -> int:
+    """Show a session.
+
+    :param args: Command line arguments.
+    :type args: argparse.Namespace
+    :param config: Configuration settings.
+    :type config: dict
+    :return: Exit code (0 for success, 1 for failure).
+    :rtype: int
+    :raises FileNotFoundError: If the session file is not found.
+    """
     from .session import SessionStore
 
     store = SessionStore()
@@ -473,6 +544,16 @@ def cmd_show(args, config) -> int:
 
 
 def cmd_delete(args, config) -> int:
+    """Delete a session by its ID.
+
+    :param args: Command line arguments containing the session ID.
+    :type args: argparse.Namespace
+    :param config: Configuration settings for the application.
+    :type config: dict
+    :return: Exit code indicating success or failure.
+    :rtype: int
+    :raises ValueError: If the session ID is missing.
+    """
     from .session import SessionStore
 
     store = SessionStore()
@@ -485,6 +566,16 @@ def cmd_delete(args, config) -> int:
 
 
 def cmd_purge(args, config) -> int:
+    """Purges sessions based on provided arguments and configuration.
+
+    :param args: Command-line arguments.
+    :type args: argparse.Namespace
+    :param config: Configuration settings.
+    :type config: dict
+    :return: Exit status code.
+    :rtype: int
+    :raises ValueError: If invalid arguments are provided.
+    """
     from .session import SessionStore
 
     store = SessionStore()
@@ -528,6 +619,16 @@ def cmd_purge(args, config) -> int:
 
 
 async def cmd_plan(args: argparse.Namespace, config) -> int:
+    """Process the input arguments and execute the plan.
+
+    :param args: Command-line arguments parsed by argparse.
+    :type args: argparse.Namespace
+    :param config: Configuration object containing necessary settings.
+    :type config: dict
+    :return: Exit code indicating success or failure.
+    :rtype: int
+    :raises ValueError: If required input is missing.
+    """
     raw_input = _get_input(args)
     if raw_input is None:
         print("Fehler: Aufgabentext oder --input Datei angeben", file=sys.stderr)
@@ -552,6 +653,13 @@ async def cmd_plan(args: argparse.Namespace, config) -> int:
 
 
 def cmd_presets(args) -> int:
+    """Prints available presets based on the provided arguments.
+
+    :param args: Command line arguments.
+    :type args: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
     if args.json:
         print(_json_dumps(list_presets(), indent=2))
         return 0
@@ -626,6 +734,14 @@ def cmd_scan(args) -> int:
 
 
 def cmd_backends(config) -> int:
+    """Prints a list of configured backends with their availability status.
+
+    :param config: Configuration object containing backend information.
+    :type config: Config
+    :return: Exit code indicating success or failure.
+    :rtype: int
+    :raises ValueError: If the configuration is invalid.
+    """
     print("Konfigurierte Backends:\n")
     for name, cfg in config.backends.items():
         status = SYM_OK if cfg.is_available else SYM_FAIL
@@ -741,6 +857,13 @@ async def cmd_doctor(config) -> int:
 
 
 def _get_input(args: argparse.Namespace) -> str | Path | None:
+    """Retrieves the input file or task from command-line arguments.
+
+    :param args: Command-line arguments namespace.
+    :type args: argparse.Namespace
+    :return: Path to an image file or text task, or None if not found.
+    :rtype: str | Path | None
+    """
     if hasattr(args, "input") and args.input:
         path = Path(args.input)
         if path.exists():
@@ -757,6 +880,13 @@ def _get_input(args: argparse.Namespace) -> str | Path | None:
 
 
 def main() -> None:
+    """Loads environment variables from a .env file and parses command-line arguments.
+
+    :param parser: Command-line argument parser.
+    :type parser: argparse.ArgumentParser
+    :return: None
+    :rtype: None
+    """
     # Load .env file into os.environ (API keys etc.)
     try:
         from dotenv import load_dotenv

@@ -237,6 +237,20 @@ pytest tests/ -v
 python tests/run_tests.py
 ```
 
+## slide-forge Integration
+
+PPTX output uses [slide-forge](../slide-forge/) as the rendering backend. The integration works in two modes:
+
+1. **Direct rendering** — synthesis output is converted to a slide-forge `Presentation` and rendered to PPTX immediately
+2. **Review mode** — the presentation is sent to slide-forge's web editor for manual review and editing before export
+
+Bullet point verbosity (keywords, sentences, academic) is controlled during the **synthesize** stage via the preset's style mapping. The web editor is for reordering and editing content, not changing verbosity — that must be set before generation.
+
+Key integration files:
+- `schulpipeline/artifacts/converter.py` — converts synthesis output to slide-forge models
+- `schulpipeline/artifacts/slide_registry.py` — classifies slides by type (title, content, sources, etc.)
+- `schulpipeline/review.py` — review server integration
+
 ## Project Structure
 
 ```
@@ -248,6 +262,7 @@ schulpipeline/
 ├── styles.py               # 6 style presets + visual slot system
 ├── presets.py              # Subject × output type presets
 ├── session.py              # Session persistence + runner
+├── review.py               # slide-forge review server integration
 ├── stages/
 │   ├── intake.py           # Parse input, extract requirements
 │   ├── plan.py             # Decompose into sections
@@ -260,6 +275,8 @@ schulpipeline/
 │   └── gemini.py           # Google Gemini adapter
 ├── artifacts/
 │   ├── pptx_builder.py     # Presentation generation
+│   ├── converter.py        # Synthesis → slide-forge model converter
+│   ├── slide_registry.py   # Slide type classification
 │   ├── docx_builder.py     # Document generation
 │   └── md_builder.py       # Markdown generation
 └── specs/                  # JSON Schema per stage

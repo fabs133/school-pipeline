@@ -28,7 +28,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["diagram", "photo", "icon", "chart", "screenshot"]
+                  "enum": ["diagram", "photo", "icon", "chart", "screenshot", "logo"]
                 },
                 "intent": { "type": "string" },
                 "placement": {

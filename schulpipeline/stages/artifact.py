@@ -10,11 +10,33 @@ from .base import BaseStage
 
 
 class ArtifactStage(BaseStage):
+    """Artifact stage for processing and generating artifacts based on synthesis and plan.
+
+    :param context: Dictionary containing the execution context with keys "synthesize" and "plan".
+    :type context: dict[str, Any]
+    :param backend: Backend object used for artifact generation.
+    :type backend: Any
+    :param config: Configuration object for the artifact stage.
+    :type config: Any
+    :return: Dictionary containing the generated artifact details.
+    :rtype: dict[str, Any]
+    """
     name = "artifact"
     spec_path = "specs/artifact.json"
     required_context = frozenset({"synthesize", "plan"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes a task based on the provided context and backend.
+
+        :param context: A dictionary containing necessary information for execution.
+        :type context: dict[str, Any]
+        :param backend: The backend used to execute the task.
+        :type backend: Any
+        :param config: Configuration settings for the execution environment.
+        :type config: Any
+        :return: A dictionary containing the result of the execution.
+        :rtype: dict[str, Any]
+        """
         synthesis = context["synthesize"]
         plan = context["plan"]
         intake = context.get("intake", {})
@@ -45,7 +67,7 @@ class ArtifactStage(BaseStage):
 
         if artifact_type == "pptx":
             from ..artifacts.pptx_builder import build_pptx
-            build_pptx(synthesis, output_path, style.visual, visual_config)
+            build_pptx(synthesis, output_path, preset=preset)
         elif artifact_type == "docx":
             from ..artifacts.docx_builder import build_docx
             build_docx(synthesis, output_path, style.visual, visual_config)
