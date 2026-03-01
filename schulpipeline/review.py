@@ -22,9 +22,8 @@ def run_review(presentation: Presentation) -> Presentation:
     6. Shuts down the server and returns the result
     """
     import httpx
-    import uvicorn
-
     import slideforge.server as srv_module
+    import uvicorn
     from slideforge.server import app
     from slideforge.storage import ProjectStore
 
