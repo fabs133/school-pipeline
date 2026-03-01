@@ -14,6 +14,13 @@ from .base import BackendError, LLMResponse, RateLimitError
 
 @dataclass
 class GeminiBackend:
+    """Converts OpenAI-style messages to Gemini format.
+
+    :param messages: List of dictionaries representing the conversation history.
+    :type messages: list[dict[str, Any]]
+    :return: Tuple containing the converted message and a list of formatted messages.
+    :rtype: tuple[str, list[dict]]
+    """
     name: str = "gemini"
     api_key: str = ""
     model: str = "gemini-2.5-flash"
@@ -77,6 +84,19 @@ class GeminiBackend:
         max_tokens: int,
         response_format: dict | None,
     ) -> LLMResponse:
+        """Sends a request to the language model API to generate a response.
+
+        :param messages: List of message dictionaries.
+        :type messages: list[dict[str, Any]]
+        :param temperature: Temperature value for controlling randomness in output.
+        :type temperature: float
+        :param max_tokens: Maximum number of tokens in the generated response.
+        :type max_tokens: int
+        :param response_format: Optional dictionary specifying the format of the response.
+        :type response_format: dict | None
+        :return: The generated response from the language model.
+        :rtype: LLMResponse
+        """
         t0 = time.monotonic()
 
         system, contents = self._convert_messages(messages)
@@ -144,6 +164,19 @@ class GeminiBackend:
         max_tokens: int = 4096,
         response_format: dict | None = None,
     ) -> LLMResponse:
+        """Asynchronously completes a conversation with the language model.
+
+        :param messages: List of message dictionaries.
+        :type messages: list[dict[str, Any]]
+        :param temperature: Sampling temperature for text generation.
+        :type temperature: float
+        :param max_tokens: Maximum number of tokens to generate.
+        :type max_tokens: int
+        :param response_format: Optional dictionary specifying the format of the response.
+        :type response_format: dict | None
+        :return: The generated LLMResponse object.
+        :rtype: LLMResponse
+        """
         return await asyncio.to_thread(
             self._sync_generate, messages, temperature, max_tokens, response_format
         )
@@ -154,11 +187,35 @@ class GeminiBackend:
         temperature: float = 0.3,
         max_tokens: int = 4096,
     ) -> LLMResponse:
+        """Completes a vision task using the provided messages.
+
+        :param messages: List of dictionaries containing message data.
+        :type messages: list[dict[str, Any]]
+        :param temperature: Temperature value for controlling randomness in output.
+        :type temperature: float
+        :param max_tokens: Maximum number of tokens to generate.
+        :type max_tokens: int
+        :return: Response from the language model.
+        :rtype: LLMResponse
+        """
         return await self.complete(messages, temperature, max_tokens)
 
     async def close(self):
+        """Closes the connection to the Gemini API.
+
+        :raises ConnectionError: If the connection cannot be closed.
+        """
         pass
 
 
 def create_gemini(api_key: str, model: str = "gemini-2.5-flash") -> GeminiBackend:
+    """Create a new Gemini backend instance.
+
+    :param api_key: API key for authentication.
+    :type api_key: str
+    :param model: Model to use, defaults to "gemini-2.5-flash".
+    :type model: str
+    :return: A new GeminiBackend instance.
+    :rtype: GeminiBackend
+    """
     return GeminiBackend(api_key=api_key, model=model)

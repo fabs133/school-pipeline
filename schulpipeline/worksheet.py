@@ -147,6 +147,17 @@ class DecomposeStage(BaseStage):
     spec_path = "specs/decompose.json"
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes a task based on the provided context and backend.
+
+        :param context: A dictionary containing the necessary information for the task execution.
+        :type context: dict[str, Any]
+        :param backend: The backend used to execute the task.
+        :type backend: Any
+        :param config: Configuration settings for the task execution.
+        :type config: Any
+        :return: A dictionary containing the result of the task execution.
+        :rtype: dict[str, Any]
+        """
         intake = context["intake"]
         preset = context.get("preset")
 
@@ -216,6 +227,17 @@ class SolveStage(BaseStage):
     spec_path = "specs/solve.json"
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes a series of tasks based on the provided context and backend.
+
+        :param context: A dictionary containing decomposed tasks and optional preset.
+        :type context: dict[str, Any]
+        :param backend: The backend used to execute tasks.
+        :type backend: Any
+        :param config: Configuration settings for task execution.
+        :type config: Any
+        :return: A dictionary with solved and unsolvable tasks.
+        :rtype: dict[str, Any]
+        """
         decomposed = context["decompose"]
         preset = context.get("preset")
 

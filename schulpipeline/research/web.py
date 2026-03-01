@@ -33,13 +33,34 @@ class DiskCache:
     """Simple file-based cache for search results."""
 
     def __init__(self, cache_dir: str | Path):
+        """Initialize a cache directory.
+
+        :param cache_dir: Path to the directory where cache files will be stored.
+        :type cache_dir: str | Path
+        :raises OSError: If there is an error creating the cache directory.
+        """
         self.dir = Path(cache_dir)
         self.dir.mkdir(parents=True, exist_ok=True)
 
     def _key(self, query: str) -> str:
+        """Generates a SHA-256 hash of the query string and returns the first 16 characters.
+
+        :param query: The input query string.
+        :type query: str
+        :return: A 16-character hexadecimal string representing the SHA-256 hash of the query.
+        :rtype: str
+        """
         return hashlib.sha256(query.encode()).hexdigest()[:16]
 
     def get(self, query: str) -> list[dict] | None:
+        """Retrieves search results from a cached JSON file.
+
+        :param query: The search query to retrieve results for.
+        :type query: str
+        :return: A list of search results or None if the cache is expired or does not exist.
+        :rtype: list[dict] | None
+        :raises FileNotFoundError: If the cache file does not exist.
+        """
         path = self.dir / f"{self._key(query)}.json"
         if not path.exists():
             return None
@@ -54,6 +75,13 @@ class DiskCache:
             return None
 
     def put(self, query: str, results: list[dict]) -> None:
+        """Stores search results in a JSON file.
+
+        :param query: The search query.
+        :type query: str
+        :param results: List of search results.
+        :type results: list[dict]
+        """
         path = self.dir / f"{self._key(query)}.json"
         data = {"ts": time.time(), "query": query, "results": results}
         path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")

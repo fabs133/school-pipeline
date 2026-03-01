@@ -25,6 +25,14 @@ class OpenAICompatibleBackend:
     max_context: int = 8192
 
     def _headers(self) -> dict[str, str]:
+        """Returns a dictionary of headers for API requests.
+
+        :param api_key: The API key to use for authentication.
+        :type api_key: str
+
+        :return: A dictionary containing the Authorization and Content-Type headers.
+        :rtype: dict[str, str]
+        """
         return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -37,6 +45,19 @@ class OpenAICompatibleBackend:
         max_tokens: int,
         response_format: dict | None,
     ) -> LLMResponse:
+        """Sends a request to the language model API to complete a chat session.
+
+        :param messages: List of message dictionaries.
+        :type messages: list[dict[str, Any]]
+        :param temperature: Temperature value for controlling randomness in output.
+        :type temperature: float
+        :param max_tokens: Maximum number of tokens in the response.
+        :type max_tokens: int
+        :param response_format: Optional dictionary specifying the format of the response.
+        :type response_format: dict | None
+        :return: The completed chat session response.
+        :rtype: LLMResponse
+        """
         t0 = time.monotonic()
         url = f"{self.base_url.rstrip('/')}/chat/completions"
 
@@ -90,6 +111,19 @@ class OpenAICompatibleBackend:
         max_tokens: int = 4096,
         response_format: dict | None = None,
     ) -> LLMResponse:
+        """Asynchronously completes a conversation with the language model.
+
+        :param messages: List of message dictionaries.
+        :type messages: list[dict[str, Any]]
+        :param temperature: Sampling temperature for text generation.
+        :type temperature: float
+        :param max_tokens: Maximum number of tokens to generate.
+        :type max_tokens: int
+        :param response_format: Optional dictionary specifying the format of the response.
+        :type response_format: dict | None
+        :return: The generated LLMResponse object.
+        :rtype: LLMResponse
+        """
         return await asyncio.to_thread(
             self._sync_complete, messages, temperature, max_tokens, response_format
         )
@@ -100,6 +134,18 @@ class OpenAICompatibleBackend:
         temperature: float = 0.3,
         max_tokens: int = 4096,
     ) -> LLMResponse:
+        """Completes a vision request using the provided messages.
+
+        :param messages: List of message dictionaries containing the conversation history.
+        :type messages: list[dict[str, Any]]
+        :param temperature: Controls the randomness of the generated text. Lower values make the output more deterministic.
+        :type temperature: float
+        :param max_tokens: Maximum number of tokens to generate in the completion.
+        :type max_tokens: int
+        :return: The response from the language model.
+        :rtype: LLMResponse
+        :raises BackendError: If the backend does not support vision.
+        """
         if not self.supports_vision:
             raise BackendError(f"{self.name} does not support vision", self.name)
         return await self.complete(messages, temperature, max_tokens)
@@ -111,10 +157,23 @@ class OpenAICompatibleBackend:
         return (tokens_in * 0.15 + tokens_out * 0.6) / 1_000_000
 
     async def close(self):
+        """Closes the connection to the Groq API.
+
+        :raises Exception: If an error occurs during the closure process.
+        """
         pass
 
 
 def create_groq(api_key: str, model: str = "llama-3.3-70b-versatile") -> OpenAICompatibleBackend:
+    """Create a Groq backend for OpenAI-compatible models.
+
+    :param api_key: API key for authentication.
+    :type api_key: str
+    :param model: Model name to use. Default is "llama-3.3-70b-versatile".
+    :type model: str
+    :return: An instance of OpenAICompatibleBackend configured for Groq.
+    :rtype: OpenAICompatibleBackend
+    """
     return OpenAICompatibleBackend(
         name="groq",
         api_key=api_key,
@@ -127,6 +186,15 @@ def create_groq(api_key: str, model: str = "llama-3.3-70b-versatile") -> OpenAIC
 
 
 def create_mistral(api_key: str, model: str = "mistral-large-latest") -> OpenAICompatibleBackend:
+    """Create a Mistral API backend instance.
+
+    :param api_key: API key for authentication.
+    :type api_key: str
+    :param model: Model name to use. Default is "mistral-large-latest".
+    :type model: str
+    :return: An OpenAI-compatible backend instance.
+    :rtype: OpenAICompatibleBackend
+    """
     return OpenAICompatibleBackend(
         name="mistral",
         api_key=api_key,
@@ -139,6 +207,15 @@ def create_mistral(api_key: str, model: str = "mistral-large-latest") -> OpenAIC
 
 
 def create_openai(api_key: str, model: str = "gpt-4o-mini") -> OpenAICompatibleBackend:
+    """Create an OpenAI-compatible backend instance.
+
+    :param api_key: API key for accessing the OpenAI service.
+    :type api_key: str
+    :param model: Model to use for generating responses. Default is "gpt-4o-mini".
+    :type model: str
+    :return: An instance of OpenAICompatibleBackend configured with the provided parameters.
+    :rtype: OpenAICompatibleBackend
+    """
     return OpenAICompatibleBackend(
         name="openai",
         api_key=api_key,

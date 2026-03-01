@@ -346,6 +346,17 @@ class AuditStage(BaseStage):
     spec_path = "specs/audit.json"
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes the method using the provided context, backend, and config.
+
+        :param context: A dictionary containing contextual information.
+        :type context: dict[str, Any]
+        :param backend: The backend to be used for execution.
+        :type backend: Any
+        :param config: Configuration settings for the execution.
+        :type config: Any
+        :return: A dictionary containing the results of the execution.
+        :rtype: dict[str, Any]
+        """
         classified = context.get("classify_docs", {})
         preset = context.get("preset")
         documents = classified.get("documents", [])

@@ -137,6 +137,20 @@ class FeedbackStore:
     """Manages feedback records on disk. All data in one directory."""
 
     def __init__(self, base_dir: str | Path = ".schulpipeline/feedback"):
+        """Initialize the FeedbackManager with a base directory.
+
+        :param base_dir: The base directory for storing feedback records and aggregate data.
+        :type base_dir: str | Path
+        ```
+
+        ```python
+        Save a feedback record to the records directory. Returns the file path where the record is saved.
+
+        :param record: The feedback record to save.
+        :type record: FeedbackRecord
+        :return: The file path of the saved record.
+        :rtype: Path
+        """
         self.base_dir = Path(base_dir)
         self.records_dir = self.base_dir / "records"
         self.records_dir.mkdir(parents=True, exist_ok=True)

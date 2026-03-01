@@ -13,6 +13,8 @@ import yaml
 
 @dataclass
 class BackendConfig:
+    """Configuration for a single LLM backend (Groq, Gemini, etc.)."""
+
     name: str
     api_key: str = ""
     model: str = ""
@@ -31,6 +33,8 @@ class BackendConfig:
 
 @dataclass
 class ResearchConfig:
+    """Settings for the web research stage."""
+
     enabled: bool = True
     use_web: bool = True
     cache_dir: str = ".schulpipeline/cache"
@@ -39,6 +43,8 @@ class ResearchConfig:
 
 @dataclass
 class OutputConfig:
+    """Output directory and format settings."""
+
     dir: str = "./output"
     default_format: str = "pptx"
     language: str = "de"
@@ -64,6 +70,8 @@ DEFAULT_CASCADE: dict[str, list[str]] = {
 
 @dataclass
 class PipelineConfig:
+    """Top-level pipeline configuration loaded from config.yaml and env vars."""
+
     backends: dict[str, BackendConfig] = field(default_factory=dict)
     cascade: dict[str, list[str]] = field(default_factory=dict)
     research: ResearchConfig = field(default_factory=ResearchConfig)

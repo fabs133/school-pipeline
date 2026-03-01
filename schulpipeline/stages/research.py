@@ -44,11 +44,34 @@ Regeln:
 
 
 class ResearchStage(BaseStage):
+    """Executes the research stage of a workflow.
+
+    :param context: The current execution context containing necessary data.
+    :type context: dict[str, Any]
+    :param backend: The backend service for executing the research.
+    :type backend: Any
+    :param config: Configuration settings for the research stage.
+    :type config: Any
+    :return: Updated context with research results.
+    :rtype: dict[str, Any]
+    :raises ValueError: If required context keys are missing.
+    """
     name = "research"
     spec_path = "specs/research.json"
     required_context = frozenset({"plan", "intake"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Execute the research plan using the provided backend and configuration.
+
+        :param context: A dictionary containing the research plan and intake data.
+        :type context: dict[str, Any]
+        :param backend: The backend system to use for executing the research queries.
+        :type backend: Any
+        :param config: Configuration settings for the research execution.
+        :type config: Any
+        :return: A dictionary containing the results of the research execution.
+        :rtype: dict[str, Any]
+        """
         plan = context["plan"]
         intake = context["intake"]
 

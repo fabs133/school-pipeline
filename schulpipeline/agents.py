@@ -66,6 +66,17 @@ class AgentConfig:
 
     @property
     def is_available(self) -> bool:
+        """Checks if the agent is available.
+
+        :param enabled: Whether the agent is currently enabled.
+        :type enabled: bool
+        :param name: The name of the agent.
+        :type name: str
+        :param api_key: The API key required for authentication.
+        :type api_key: str
+        :return: True if the agent is available, False otherwise.
+        :rtype: bool
+        """
         if not self.enabled:
             return False
         if self.name == "local_llm":
@@ -175,6 +186,15 @@ class ProjectSpec:
 
 @dataclass
 class ModuleSpec:
+    """A specification for a module.
+
+    :param name: The name of the module.
+    :type name: str
+    :param purpose: A brief description of the module's purpose.
+    :type purpose: str
+    :param files: A list of file specifications within the module.
+    :type files: list[FileSpec]
+    """
     name: str
     purpose: str
     files: list[FileSpec] = field(default_factory=list)
@@ -182,6 +202,15 @@ class ModuleSpec:
 
 @dataclass
 class FileSpec:
+    """Represents a specification for a file.
+
+    :param path: The file path.
+    :type path: str
+    :param description: A brief description of the file.
+    :type description: str
+    :param key_functions: List of key functions in the file.
+    :type key_functions: list[str]
+    """
     path: str                          # e.g. "src/models/user.py"
     description: str
     key_functions: list[str] = field(default_factory=list)
@@ -203,12 +232,55 @@ class LocalLLMAgent(BaseAgent):
     description = "Code-Generierung über Pipeline-Backends (kostenlos)"
 
     def __init__(self, router):
+        """Initialize a new instance of the class.
+
+        :param router: The router object to be used.
+        :type router: Router
+        """
+
+        async def estimate_cost(self, spec: ProjectSpec) -> float:
+            """
+            Estimate the cost for a project specification.
+
+            :param spec: The project specification.
+            :type spec: ProjectSpec
+            :return: The estimated cost.
+            :rtype: float
+            """
+
+        async def execute(self, spec: ProjectSpec, output_dir: Path) -> AgentResult:
+            """
+            Execute a project specification and return the result.
+
+            :param spec: The project specification.
+            :type spec: ProjectSpec
+            :param output_dir: The directory to store output files.
+            :type output_dir: Path
+            :return: The execution result.
+            :rtype: AgentResult
+        """
         self.router = router
 
     async def estimate_cost(self, spec: ProjectSpec) -> float:
+        """Estimates the cost of a project based on its specifications.
+
+        :param spec: The project specification.
+        :type spec: ProjectSpec
+        :return: The estimated cost of the project.
+        :rtype: float
+        """
         return 0.0  # Free
 
     async def execute(self, spec: ProjectSpec, output_dir: Path) -> AgentResult:
+        """Executes the project specification by generating files in the specified output directory.
+
+        :param spec: Project specification containing modules and their file specifications.
+        :type spec: ProjectSpec
+        :param output_dir: Directory where generated files will be saved.
+        :type output_dir: Path
+        :return: Result of the execution, including any errors encountered.
+        :rtype: AgentResult
+        """
         output_dir.mkdir(parents=True, exist_ok=True)
         files_created = []
         errors = []
@@ -244,6 +316,17 @@ class LocalLLMAgent(BaseAgent):
         )
 
     async def _generate_file(self, spec: ProjectSpec, module: ModuleSpec, file_spec: FileSpec) -> str:
+        """Generates the code for a file in a project.
+
+        :param spec: Project specification.
+        :type spec: ProjectSpec
+        :param module: Module specification.
+        :type module: ModuleSpec
+        :param file_spec: File specification.
+        :type file_spec: FileSpec
+        :return: Generated code as a string.
+        :rtype: str
+        """
         functions_hint = ""
         if file_spec.key_functions:
             functions_hint = f"\nMuss enthalten: {', '.join(file_spec.key_functions)}"
@@ -334,14 +417,55 @@ class ClaudeCodeAgent(BaseAgent):
     description = "Claude Code CLI — vollständige Projektgenerierung (Credits)"
 
     def __init__(self, config: AgentConfig):
+        """Initialize the agent with configuration.
+
+        :param config: Configuration for the agent.
+        :type config: AgentConfig
+        """
+
+        """
+        Estimate the cost of processing a project specification.
+
+        :param spec: Project specification to estimate.
+        :type spec: ProjectSpec
+        :return: Estimated cost in dollars.
+        :rtype: float
+        """
+
+        """
+        Execute the project specification and save results.
+
+        :param spec: Project specification to execute.
+        :type spec: ProjectSpec
+        :param output_dir: Directory to save execution results.
+        :type output_dir: Path
+        :return: Result of the agent execution.
+        :rtype: AgentResult
+        """
         self.config = config
 
     async def estimate_cost(self, spec: ProjectSpec) -> float:
+        """Estimate the cost of a project based on its specification.
+
+        :param spec: Project specification.
+        :type spec: ProjectSpec
+        :return: Estimated cost in dollars.
+        :rtype: float
+        """
         # Rough estimate: ~$0.10-0.50 per file for Sonnet
         file_count = sum(len(m.files) for m in spec.modules) + 2  # +readme +config
         return file_count * 0.15  # Conservative estimate
 
     async def execute(self, spec: ProjectSpec, output_dir: Path) -> AgentResult:
+        """Executes the project specification by writing it to a temporary file and running a Claude code command.
+
+        :param spec: The project specification to be executed.
+        :type spec: ProjectSpec
+        :param output_dir: The directory where the project will be implemented.
+        :type output_dir: Path
+        :return: The result of the agent execution.
+        :rtype: AgentResult
+        """
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Write spec to temp file
@@ -417,13 +541,56 @@ class CodexAgent(BaseAgent):
     description = "OpenAI Codex CLI — Projektgenerierung (Credits)"
 
     def __init__(self, config: AgentConfig):
+        """Initialize the agent with the given configuration.
+
+        :param config: Configuration for the agent.
+        :type config: AgentConfig
+        """
+
+        async def estimate_cost(self, spec: ProjectSpec) -> float:
+            """
+            Estimate the cost based on the project specification.
+
+            :param spec: Specification of the project.
+            :type spec: ProjectSpec
+            :return: Estimated cost in dollars.
+            :rtype: float
+            """
+
+        async def execute(self, spec: ProjectSpec, output_dir: Path) -> AgentResult:
+            """
+            Execute the project based on the specification and save results to the output directory.
+
+            :param spec: Specification of the project.
+            :type spec: ProjectSpec
+            :param output_dir: Directory where results will be saved.
+            :type output_dir: Path
+            :return: Result of the execution.
+            :rtype: AgentResult
+        """
         self.config = config
 
     async def estimate_cost(self, spec: ProjectSpec) -> float:
+        """Estimate the cost of a project based on its specifications.
+
+        :param spec: Project specification object.
+        :type spec: ProjectSpec
+        :return: Estimated cost in dollars.
+        :rtype: float
+        """
         file_count = sum(len(m.files) for m in spec.modules) + 2
         return file_count * 0.10
 
     async def execute(self, spec: ProjectSpec, output_dir: Path) -> AgentResult:
+        """Execute the project specification and generate the necessary files.
+
+        :param spec: Project specification to be executed.
+        :type spec: ProjectSpec
+        :param output_dir: Directory where the project files will be generated.
+        :type output_dir: Path
+
+        :raises ValueError: If the specified language is not supported.
+        """
         output_dir.mkdir(parents=True, exist_ok=True)
 
         spec_file = output_dir / ".project_spec.md"
@@ -597,6 +764,15 @@ def _detect_language(text: str) -> str:
 
 
 def _detect_framework(text: str, language: str) -> str:
+    """Detects the framework used in a given text based on language and keywords.
+
+    :param text: The input text to analyze.
+    :type text: str
+    :param language: The programming language of the text.
+    :type language: str
+    :return: The detected framework or an empty string if no framework is found.
+    :rtype: str
+    """
     frameworks = {
         "python": {"flask": "flask", "django": "django", "fastapi": "fastapi"},
         "javascript": {"react": "react", "express": "express", "vue": "vue", "next": "nextjs"},
@@ -610,6 +786,13 @@ def _detect_framework(text: str, language: str) -> str:
 
 
 def _detect_project_type(text: str) -> str:
+    """Detects the type of project based on keywords in the given text.
+
+    :param text: The input text to analyze.
+    :type text: str
+    :return: The detected project type ('web', 'api', 'cli', or 'library').
+    :rtype: str
+    """
     if any(w in text for w in ["webapp", "web-app", "website", "webseite"]):
         return "web"
     if any(w in text for w in ["api", "rest", "endpoint", "schnittstelle"]):
@@ -622,6 +805,13 @@ def _detect_project_type(text: str) -> str:
 
 
 def _slugify(text: str) -> str:
+    """Converts a given text to a URL-friendly slug.
+
+    :param text: The input string to be slugified.
+    :type text: str
+    :return: A slugified version of the input string.
+    :rtype: str
+    """
     replacements = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"}
     for old, new in replacements.items():
         text = text.lower().replace(old, new)
@@ -629,18 +819,41 @@ def _slugify(text: str) -> str:
 
 
 def _infer_file_path(module_name: str, language: str) -> str:
+    """Infer the file path for a given module name and language.
+
+    :param module_name: The name of the module.
+    :type module_name: str
+    :param language: The programming language.
+    :type language: str
+    :return: The inferred file path.
+    :rtype: str
+    """
     ext = {"python": ".py", "javascript": ".js", "typescript": ".ts",
            "java": ".java", "csharp": ".cs", "php": ".php", "go": ".go", "rust": ".rs"}
     return f"src/{module_name}{ext.get(language, '.py')}"
 
 
 def _infer_entry_point(language: str, project_type: str) -> str:
+    """Infer the entry point file for a given project type and language.
+
+    :param language: The programming language of the project.
+    :type language: str
+    :return: The inferred entry point file name.
+    :rtype: str
+    """
     entries = {"python": "main.py", "javascript": "src/index.js",
                "typescript": "src/index.ts", "java": "src/Main.java"}
     return entries.get(language, "main.py")
 
 
 def _infer_dependencies(framework: str, language: str) -> list[str]:
+    """Infer dependencies based on the framework and language.
+
+    :param framework: The name of the framework.
+    :type framework: str
+    :return: A list of dependency packages.
+    :rtype: list[str]
+    """
     deps = {
         "flask": ["flask"],
         "django": ["django"],
@@ -653,11 +866,25 @@ def _infer_dependencies(framework: str, language: str) -> list[str]:
 
 
 def _infer_complexity(intake: dict[str, Any]) -> str:
+    """Infer the complexity of a given input dictionary.
+
+    :param intake: A dictionary containing the necessary information.
+    :type intake: dict[str, Any]
+    :return: The complexity level as a string.
+    :rtype: str
+    """
     # Could be derived from preset difficulty, for now default
     return "berufsschule"
 
 
 def _run_command(spec: ProjectSpec) -> str:
+    """Runs a command based on the project specification.
+
+    :param spec: Project specification containing language and entry point.
+    :type spec: ProjectSpec
+    :return: Command string to be executed.
+    :rtype: str
+    """
     cmds = {"python": f"python {spec.entry_point}",
             "javascript": f"node {spec.entry_point}",
             "typescript": f"npx ts-node {spec.entry_point}",

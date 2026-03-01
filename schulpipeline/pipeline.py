@@ -19,6 +19,23 @@ logger = logging.getLogger("schulpipeline.pipeline")
 
 @dataclass
 class PipelineResult:
+    """A class representing the result of a pipeline execution.
+
+    :param success: Indicates whether the pipeline was executed successfully.
+    :type success: bool
+    :param results: A list of stage results from the pipeline.
+    :type results: list[StageResult]
+    :param output_path: The path to the output file, if any.
+    :type output_path: str | None
+    :param failed_stage: The name of the stage that failed, if any.
+    :type failed_stage: str | None
+    :param validation_errors: A list of validation errors encountered during execution.
+    :type validation_errors: list[str]
+    :param total_cost_usd: The total cost of the pipeline execution in USD.
+    :type total_cost_usd: float
+    :param elapsed_ms: The time taken to execute the pipeline in milliseconds.
+    :type elapsed_ms: int
+    """
     success: bool
     results: list[StageResult] = field(default_factory=list)
     output_path: str | None = None
@@ -32,6 +49,13 @@ class Pipeline:
     """Runs the 5-stage pipeline: intake → plan → research → synthesize → artifact."""
 
     def __init__(self, config: PipelineConfig, router: BackendRouter | None):
+        """Initialize the pipeline with configuration and router.
+
+        :param config: Configuration for the pipeline.
+        :type config: PipelineConfig
+        :param router: Optional backend router for routing requests.
+        :type router: BackendRouter | None
+        """
         self.config = config
         self.router = router
 

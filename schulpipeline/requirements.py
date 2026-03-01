@@ -161,6 +161,17 @@ class ClassifyReportStage(BaseStage):
     spec_path = "specs/classify_report.json"
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes the method with the provided context and backend.
+
+        :param context: A dictionary containing classification, audit, preset, and documents.
+        :type context: dict[str, Any]
+        :param backend: The backend to use for execution.
+        :type backend: Any
+        :param config: Configuration settings for the execution.
+        :type config: Any
+        :return: A dictionary containing the results of the execution.
+        :rtype: dict[str, Any]
+        """
         classified = context.get("classify_docs", {})
         audit = context.get("audit", {})
         _preset = context.get("preset")  # reserved for future use
@@ -282,6 +293,17 @@ class AmendmentsStage(BaseStage):
     spec_path = "specs/amendments.json"
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Execute the method with the given context, backend, and config.
+
+        :param context: A dictionary containing audit and classify_report data.
+        :type context: dict[str, Any]
+        :param backend: The backend object for executing actions.
+        :type backend: Any
+        :param config: Configuration settings for the execution.
+        :type config: Any
+        :return: A dictionary containing the results of the execution.
+        :rtype: dict[str, Any]
+        """
         audit = context.get("audit", {})
         classify_report = context.get("classify_report", {})
         _preset = context.get("preset")  # reserved for future use

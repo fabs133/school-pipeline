@@ -41,6 +41,13 @@ Regeln:
 
 
 def _build_plan_prompt(preset=None) -> str:
+    """Builds a plan prompt based on the provided preset.
+
+    :param preset: Optional preset containing system context and quality instructions.
+    :type preset: PlanPreset or None
+    :return: A string representing the plan prompt.
+    :rtype: str
+    """
     parts = [PLAN_SYSTEM_INTRO]
     if preset:
         parts.append(f"\n{preset.system_context}")
@@ -51,11 +58,33 @@ def _build_plan_prompt(preset=None) -> str:
 
 
 class PlanStage(BaseStage):
+    """Executes the plan stage.
+
+    :param context: The execution context containing necessary data.
+    :type context: dict[str, Any]
+    :param backend: The backend service for executing tasks.
+    :type backend: Any
+    :param config: Configuration settings for the execution.
+    :type config: Any
+    :return: A dictionary containing the results of the execution.
+    :rtype: dict[str, Any]
+    """
     name = "plan"
     spec_path = "specs/plan.json"
     required_context = frozenset({"intake"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes a task based on the provided context.
+
+        :param context: A dictionary containing task details.
+        :type context: dict[str, Any]
+        :param backend: The backend service to use for execution.
+        :type backend: Any
+        :param config: Configuration settings for the execution.
+        :type config: Any
+        :return: A dictionary with the result of the task execution.
+        :rtype: dict[str, Any]
+        """
         intake = context["intake"]
         preset = context.get("preset")
 

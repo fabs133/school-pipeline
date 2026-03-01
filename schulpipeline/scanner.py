@@ -459,6 +459,13 @@ READERS: dict[str, Callable[[Path], ContentResult]] = {
 # ============================================================
 
 def _match_keywords(text: str, patterns: list[str]) -> list[str]:
+    """:param text: The input text to search within.
+    :type text: str
+    :param patterns: A list of regex patterns to search for in the text.
+    :type patterns: list[str]
+    :return: A list of patterns that match the text.
+    :rtype: list[str]
+    """
     return [p for p in patterns if re.search(p, text, re.IGNORECASE)]
 
 
@@ -670,12 +677,28 @@ def _apply_content_result(sf: ScannedFile, cr: ContentResult) -> None:
 # ============================================================
 
 def _normalize_stem(fn: str) -> str:
+    """Normalizes the stem of a file path by converting it to lowercase and removing specific suffixes and non-alphanumeric characters.
+
+    :param fn: The file path whose stem needs normalization.
+    :type fn: str
+    :return: The normalized stem of the file path.
+    :rtype: str
+    """
     s = Path(fn).stem.lower()
     s = re.sub(r"onenote$", "", s)
     return re.sub(r"[^a-z0-9äöüß]", "", s)
 
 
 def _stems_related(a: str, b: str) -> bool:
+    """Determines if two strings are related based on a similarity threshold.
+
+    :param a: First string to compare.
+    :type a: str
+    :param b: Second string to compare.
+    :type b: str
+    :return: True if the strings are related, False otherwise.
+    :rtype: bool
+    """
     if not a or not b:
         return False
     if a in b or b in a:
@@ -685,12 +708,28 @@ def _stems_related(a: str, b: str) -> bool:
 
 
 def _make_id(folder: str, fn: str) -> str:
+    """Generates a unique identifier for a file based on its folder and name.
+
+    :param folder: The folder containing the file.
+    :type folder: str
+    :param fn: The filename of the file.
+    :type fn: str
+    :return: A lowercase, URL-friendly string representing the file's identifier.
+    :rtype: str
+    """
     stem = re.sub(r"OneNote$", "", Path(fn).stem)
     safe = re.sub(r"_+", "_", re.sub(r"[^a-zA-Z0-9_äöüÄÖÜß-]", "_", stem)).strip("_")
     return f"{folder}_{safe}".lower()[:60]
 
 
 def _title(sf: ScannedFile) -> str:
+    """Returns the title of the file based on its text preview or filename.
+
+    :param sf: The scanned file object.
+    :type sf: ScannedFile
+    :return: The title of the file.
+    :rtype: str
+    """
     if sf.text_preview:
         first = sf.text_preview.split("\n")[0].strip()
         if 5 < len(first) < 100 and not first.startswith("HOT "):

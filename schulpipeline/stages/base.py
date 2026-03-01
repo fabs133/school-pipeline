@@ -51,6 +51,8 @@ def validate_against_spec(data: dict[str, Any], spec_path: str | Path) -> list[s
 
 @runtime_checkable
 class Stage(Protocol):
+    """Protocol that all pipeline stages must implement."""
+
     name: str
     spec_path: str
 

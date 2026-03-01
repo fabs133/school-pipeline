@@ -162,6 +162,17 @@ class ClassifyDocsStage(BaseStage):
     spec_path = "specs/classify_docs.json"
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes the method using the provided context and backend.
+
+        :param context: A dictionary containing necessary information for execution.
+        :type context: dict[str, Any]
+        :param backend: The backend to be used for processing.
+        :type backend: Any
+        :param config: Configuration settings for the execution.
+        :type config: Any
+        :return: A dictionary containing the results of the execution.
+        :rtype: dict[str, Any]
+        """
         documents = context.get("documents", [])
         _preset = context.get("preset")  # reserved for future use
 
@@ -241,6 +252,18 @@ class FillTemplateStage(BaseStage):
     spec_path = "specs/fill_template.json"
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes the method using the provided context, backend, and config.
+
+        :param context: A dictionary containing classification information.
+        :type context: dict[str, Any]
+        :param backend: The backend to use for execution.
+        :type backend: Any
+        :param config: Configuration settings for the execution.
+        :type config: Any
+        :return: A dictionary with the result of the execution or an error message.
+        :rtype: dict[str, Any]
+        :raises ValueError: If no templates are found in the context.
+        """
         classified = context.get("classify_docs", {})
         preset = context.get("preset")
 

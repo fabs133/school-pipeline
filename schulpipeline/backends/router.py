@@ -49,6 +49,12 @@ class BackendRouter:
     _stage_tokens: dict[str, dict[str, int]] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
+        """Initialize internal state and discover available backends.
+
+        :param config: Configuration object containing backend settings.
+        :type config: Config
+        :raises ValueError: If the configuration is invalid.
+        """
         self._stage_costs = {}
         self._stage_tokens = {}
         self._discover_backends()
@@ -76,10 +82,20 @@ class BackendRouter:
 
     @property
     def available_backends(self) -> list[str]:
+        """Returns a list of available backends.
+
+        :return: List of backend names.
+        :rtype: list[str]
+        """
         return list(self._backends.keys())
 
     @property
     def total_cost(self) -> float:
+        """Returns the total cost of operations.
+
+        :return: Total cost as a float.
+        :rtype: float
+        """
         return self._total_cost
 
     def _is_cooled_down(self, name: str) -> bool:

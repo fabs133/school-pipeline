@@ -82,12 +82,26 @@ class Session:
 
     @property
     def last_completed_stage(self) -> str | None:
+        """Returns the name of the last completed stage.
+
+        :param completed_stages: List of stages that have been completed.
+        :type completed_stages: list[Stage]
+        :return: Name of the last completed stage or None if no stages are completed.
+        :rtype: str | None
+        """
         if self.completed_stages:
             return self.completed_stages[-1].name
         return None
 
     @property
     def stage_names_completed(self) -> set[str]:
+        """Returns a set of names for all completed stages.
+
+        :param completed_stages: List of completed stages.
+        :type completed_stages: list[Stage]
+        :return: Set of stage names.
+        :rtype: set[str]
+        """
         return {s.name for s in self.completed_stages}
 
     @property
@@ -97,6 +111,9 @@ class Session:
 
     @property
     def is_resumable(self) -> bool:
+        """:return: True if the task is in a resumable state, False otherwise.
+        :rtype: bool
+        """
         return self.status in ("paused", "failed", "running")
 
     @property
@@ -112,6 +129,27 @@ class Session:
         return self.task_input[:60]
 
     def to_dict(self) -> dict[str, Any]:
+        """Converts the object to a dictionary.
+
+        :param id: The unique identifier of the task.
+        :type id: str
+        :param created_at: The timestamp when the task was created.
+        :type created_at: datetime
+        :param updated_at: The timestamp when the task was last updated.
+        :type updated_at: datetime
+        :param task_input: The input data for the task.
+        :type task_input: Any
+        :param input_type: The type of the input data.
+        :type input_type: str
+        :param preset_key: The key of the preset used for the task.
+        :type preset_key: str
+        :param output_type: The expected output type of the task.
+        :type output_type: str
+        :param subject: The subject or name of the task.
+        :type subject: str
+        :param preset_overrides: Any overrides to the preset settings.
+        :type preset_overrides: dict
+        """
         d = {
             "id": self.id,
             "created_at": self.created_at,
@@ -149,6 +187,14 @@ class Session:
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Session:
+        """Creates a `Session` object from a dictionary.
+
+        :param d: Dictionary containing session data.
+        :type d: dict[str, Any]
+        :return: A new `Session` object initialized with the provided data.
+        :rtype: Session
+        :raises ValueError: If required keys are missing in the input dictionary.
+        """
         stages = [
             StageSnapshot(
                 name=s["name"],
@@ -199,6 +245,11 @@ class SessionStore:
     """
 
     def __init__(self, sessions_dir: str = ".schulpipeline/sessions"):
+        """Initialize the session manager with a directory for storing sessions.
+
+        :param sessions_dir: Directory path where sessions will be stored.
+        :type sessions_dir: str
+        """
         self.dir = Path(sessions_dir)
         self.dir.mkdir(parents=True, exist_ok=True)
         self._index_path = self.dir / "index.json"
@@ -338,6 +389,15 @@ class SessionStore:
     # --- Index management ---
 
     def _load_index(self) -> dict[str, dict[str, Any]]:
+        """Loads the index from a JSON file.
+
+        :param index_path: Path to the index file.
+        :type index_path: Path
+        :return: Index data as a dictionary.
+        :rtype: dict[str, dict[str, Any]]
+        :raises FileNotFoundError: If the index file does not exist.
+        :raises json.JSONDecodeError: If the file contains invalid JSON.
+        """
         if self._index_path.exists():
             try:
                 return json.loads(self._index_path.read_text(encoding="utf-8"))
@@ -346,12 +406,24 @@ class SessionStore:
         return {}
 
     def _save_index(self, index: dict[str, dict[str, Any]]) -> None:
+        """Saves the given index to a file.
+
+        :param index: The index dictionary to save.
+        :type index: dict[str, dict[str, Any]]
+        :raises IOError: If there is an error writing to the file.
+        """
         self._index_path.write_text(
             json.dumps(index, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 
     def _update_index(self, session: Session) -> None:
+        """Updates the index with the details of a given session.
+
+        :param session: The session to update in the index.
+        :type session: Session
+        :raises KeyError: If the session ID is not found in the index.
+        """
         index = self._load_index()
         index[session.id] = {
             "id": session.id,
@@ -367,6 +439,12 @@ class SessionStore:
         self._save_index(index)
 
     def _remove_from_index(self, session_id: str) -> None:
+        """Removes a session from the index.
+
+        :param session_id: ID of the session to remove.
+        :type session_id: str
+        :raises KeyError: If the session ID does not exist in the index.
+        """
         index = self._load_index()
         index.pop(session_id, None)
         self._save_index(index)
@@ -384,6 +462,18 @@ class SessionRunner:
     """
 
     def __init__(self, store: SessionStore, pipeline, router):
+        """Initialize a new instance of the SessionRunner class.
+
+        :param store: The session store to use for saving sessions.
+        :type store: SessionStore
+        :param pipeline: The pipeline to use for running the session.
+        :type pipeline: Pipeline
+        :param router: The router to use for routing requests.
+        :type router: Router
+
+        :return: The completed session.
+        :rtype: Session
+        """
         self.store = store
         self.pipeline = pipeline
         self.router = router

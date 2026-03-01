@@ -42,6 +42,13 @@ Regeln:
 
 
 def _build_intake_prompt(preset=None) -> str:
+    """Builds the intake prompt based on the provided preset.
+
+    :param preset: The preset configuration for the intake process.
+    :type preset: PresetConfig or None
+    :return: The constructed intake prompt as a string.
+    :rtype: str
+    """
     parts = [INTAKE_SYSTEM_INTRO]
     if preset:
         parts.append(f"\nKontext: {preset.domain_context}")
@@ -53,11 +60,34 @@ def _build_intake_prompt(preset=None) -> str:
 
 
 class IntakeStage(BaseStage):
+    """IntakeStage processes raw input data.
+
+    :param context: The execution context containing necessary data.
+    :type context: dict[str, Any]
+    :param backend: The backend service for additional operations.
+    :type backend: Any
+    :param config: Configuration settings for the stage.
+    :type config: Any
+    :return: A dictionary with processed data.
+    :rtype: dict[str, Any]
+    """
     name = "intake"
     spec_path = "specs/intake.json"
     required_context = frozenset({"raw_input"})
 
     async def execute(self, context: dict[str, Any], backend: Any, config: Any) -> dict[str, Any]:
+        """Executes a command based on the input context.
+
+        :param context: A dictionary containing the execution context.
+        :type context: dict[str, Any]
+        :param backend: The backend object for processing.
+        :type backend: Any
+        :param config: Configuration settings for the execution.
+        :type config: Any
+        :return: A dictionary containing the result of the execution.
+        :rtype: dict[str, Any]
+        :raises ValueError: If the input is invalid or cannot be processed.
+        """
         raw_input = context["raw_input"]
         raw_input_str = str(raw_input)
         preset = context.get("preset")  # ResolvedPreset or None
@@ -85,6 +115,20 @@ class IntakeStage(BaseStage):
         return data
 
     async def _process_text(self, text: str, backend: Any, config: Any, preset=None) -> dict[str, Any]:
+        """Process text using a specified backend and configuration.
+
+        :param text: The text to process.
+        :type text: str
+        :param backend: The backend used for processing.
+        :type backend: Any
+        :param config: Configuration settings for the backend.
+        :type config: Any
+        :param preset: Optional preset to use for the prompt.
+        :type preset: Any
+        :return: A dictionary containing the processed result.
+        :rtype: dict[str, Any]
+        :raises ExceptionType: If an error occurs during processing.
+        """
         prompt = _build_intake_prompt(preset)
 
         messages = [
@@ -112,6 +156,17 @@ class IntakeStage(BaseStage):
         return data
 
     async def _process_image(self, image_path: Path, backend: Any, preset=None) -> dict[str, Any]:
+        """Process an image and return its data.
+
+        :param image_path: Path to the image file.
+        :type image_path: Path
+        :param backend: The backend to use for processing.
+        :type backend: Any
+        :param preset: Optional preset configuration.
+        :type preset: dict[str, Any]
+        :return: A dictionary containing the processed image data.
+        :rtype: dict[str, Any]
+        """
         image_data = base64.b64encode(image_path.read_bytes()).decode("utf-8")
         suffix = image_path.suffix.lower().lstrip(".")
         mime_type = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp"}.get(
@@ -181,6 +236,13 @@ def _parse_json_response(content: str) -> dict[str, Any]:
 
 
 def _infer_format(task_type: str) -> str:
+    """Infer the file format based on the task type.
+
+    :param task_type: The type of task for which to infer the file format.
+    :type task_type: str
+    :return: The inferred file format.
+    :rtype: str
+    """
     return {
         "presentation": "pptx",
         "document": "docx",

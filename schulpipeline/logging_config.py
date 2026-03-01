@@ -41,6 +41,13 @@ class JsonFormatter(logging.Formatter):
     """Outputs log records as single-line JSON for machine parsing."""
 
     def format(self, record: logging.LogRecord) -> str:
+        """Formats a logging.LogRecord into a string with timestamp, log level, logger name, message, and optional correlation context.
+
+        :param record: The LogRecord to format.
+        :type record: logging.LogRecord
+        :return: A formatted string representing the log record.
+        :rtype: str
+        """
         entry: dict[str, Any] = {
             "ts": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
             "level": record.levelname,
@@ -75,12 +82,26 @@ class HumanFormatter(logging.Formatter):
     """Human-readable format with optional run_id prefix."""
 
     def __init__(self):
+        """Initializes the logger with a specific format and date format.
+
+        :param fmt: The format string for log messages.
+        :type fmt: str
+        :param datefmt: The date format string for log timestamps.
+        :type datefmt: str
+        """
         super().__init__(
             fmt="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
             datefmt="%H:%M:%S",
         )
 
     def format(self, record: logging.LogRecord) -> str:
+        """Formats a log record by adding a run ID if available.
+
+        :param record: The log record to format.
+        :type record: logging.LogRecord
+        :return: The formatted log message.
+        :rtype: str
+        """
         run_id = get_run_id()
         if run_id:
             record.msg = f"[{run_id}] {record.msg}"
