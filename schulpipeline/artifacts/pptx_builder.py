@@ -4,6 +4,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from slideforge.renderer import render_pptx
+
 from .converter import synthesis_to_presentation
 
 if TYPE_CHECKING:
@@ -20,7 +22,5 @@ def build_pptx(
     Converts the synthesis dict to a slideforge Presentation model
     and renders it using slideforge's template-based renderer.
     """
-    from slideforge.renderer import render_pptx
-
     presentation = synthesis_to_presentation(synthesis, preset)
     render_pptx(presentation, output_path)

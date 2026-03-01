@@ -142,15 +142,17 @@ Regeln:
 
 def _build_slideforge_style_block(preset) -> str:
     """Inject a strong bullet-format directive based on the resolved PresentationStyle."""
+    from slideforge.models import PresentationStyle
     from slideforge.prompts import get_style_instruction
 
     from ..artifacts.converter import _PRESET_STYLE_MAP
 
     if preset:
-        style_val = _PRESET_STYLE_MAP.get(preset.style, "sentences")
+        pres_style = _PRESET_STYLE_MAP.get(preset.style, PresentationStyle.SENTENCES)
     else:
-        style_val = "sentences"
+        pres_style = PresentationStyle.SENTENCES
 
+    style_val = pres_style.value if hasattr(pres_style, "value") else pres_style
     instruction = get_style_instruction(style_val)
 
     return f"""

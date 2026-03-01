@@ -23,6 +23,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "pydantic>=2.5",
     "lxml>=4.9",
+    "slideforge @ git+https://github.com/fabs133/slide-forge.git",
 ]
 
 [project.optional-dependencies]
