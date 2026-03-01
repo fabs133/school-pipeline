@@ -20,12 +20,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
 
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
       - name: Lint with ruff
-        run: ruff check schulpipeline/
+        run: ruff check schulpipeline/ tests/
+
+      - name: Check formatting
+        run: ruff format --check schulpipeline/ tests/
 
       - name: Run offline tests
-        run: pytest tests/ -v --ignore=tests/live -x
+        run: pytest tests/ -v --ignore=tests/live -x --cov=schulpipeline --cov-report=term-missing
+
+      - name: Verify CLI entry point
+        run: schulpipeline --help

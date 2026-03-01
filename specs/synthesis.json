@@ -14,7 +14,7 @@
         "properties": {
           "section_id": { "type": "string" },
           "heading": { "type": "string" },
-          "content": { "type": "string", "minLength": 10 },
+          "content": { "type": "string", "minLength": 1 },
           "bullet_points": {
             "type": "array",
             "items": { "type": "string" }

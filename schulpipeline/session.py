@@ -22,7 +22,7 @@ import json
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -265,7 +265,7 @@ class SessionStore:
         tags: list[str] | None = None,
     ) -> Session:
         """Create a new session."""
-        now = datetime.now(tz=__import__("datetime").timezone.utc).isoformat() + "Z"
+        now = datetime.now(tz=timezone.utc).isoformat() + "Z"
         session = Session(
             id=_short_id(),
             created_at=now,
@@ -284,7 +284,7 @@ class SessionStore:
 
     def save(self, session: Session) -> None:
         """Persist session to disk."""
-        session.updated_at = datetime.now(tz=__import__("datetime").timezone.utc).isoformat() + "Z"
+        session.updated_at = datetime.now(tz=timezone.utc).isoformat() + "Z"
         path = self.dir / f"{session.id}.json"
         path.write_text(
             json.dumps(session.to_dict(), ensure_ascii=False, indent=2),
@@ -349,7 +349,7 @@ class SessionStore:
         entries = sorted(index.values(), key=lambda e: e.get("updated_at", ""), reverse=True)
 
         to_delete: list[str] = []
-        now = datetime.now(tz=__import__("datetime").timezone.utc)
+        now = datetime.now(tz=timezone.utc)
 
         for i, entry in enumerate(entries):
             sid = entry["id"]
@@ -367,7 +367,7 @@ class SessionStore:
             if updated:
                 try:
                     ts = datetime.fromisoformat(updated.rstrip("Z")).replace(
-                        tzinfo=__import__("datetime").timezone.utc
+                        tzinfo=timezone.utc
                     )
                     age = (now - ts).days
                     if age > max_age_days:
@@ -535,7 +535,7 @@ class SessionRunner:
                 errors=result.errors,
                 elapsed_ms=result.metadata.get("elapsed_ms", 0),
                 backend_used=result.metadata.get("backend", ""),
-                completed_at=datetime.now(tz=__import__("datetime").timezone.utc).isoformat() + "Z",
+                completed_at=datetime.now(tz=timezone.utc).isoformat() + "Z",
             )
 
             if not result.success:

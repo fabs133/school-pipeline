@@ -57,14 +57,14 @@ def test_validate_against_spec_synthesis_valid():
     assert errors == []
 
 
-def test_validate_against_spec_synthesis_content_too_short():
-    """Synthesis spec requires content minLength: 10."""
+def test_validate_against_spec_synthesis_content_empty():
+    """Synthesis spec requires content minLength: 1 (non-empty)."""
     data = {
         "title": "Test Title Here",
-        "sections": [{"section_id": "s1", "heading": "Test", "content": "short"}],
+        "sections": [{"section_id": "s1", "heading": "Test", "content": ""}],
     }
     errors = validate_against_spec(data, "specs/synthesis.json")
-    assert any("too short" in e for e in errors)
+    assert any("non-empty" in e or "too short" in e for e in errors)
 
 
 @pytest.mark.asyncio

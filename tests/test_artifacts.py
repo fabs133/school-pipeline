@@ -1,12 +1,18 @@
 """Tests for artifact builders — PPTX, DOCX, MD file generation."""
 
-from pathlib import Path
-
 import pytest
 
+from schulpipeline.artifacts.converter import synthesis_to_presentation
 from schulpipeline.artifacts.docx_builder import build_docx
 from schulpipeline.artifacts.md_builder import build_md
 from schulpipeline.artifacts.pptx_builder import build_pptx
+from schulpipeline.artifacts.slide_registry import (
+    _REGISTRY,
+    _get_spec,
+    classify_presentation,
+    classify_section,
+)
+from schulpipeline.presets import resolve_preset
 
 # ============================================================
 # PPTX Builder
@@ -307,15 +313,6 @@ def test_docx_visuals_disabled(synthesis_data_with_visuals, clean_style, visual_
 # Slide Registry — classify_section
 # ============================================================
 
-from schulpipeline.artifacts.slide_registry import (
-    _REGISTRY,
-    _get_spec,
-    classify_presentation,
-    classify_section,
-)
-from schulpipeline.presets import resolve_preset
-
-
 class TestClassifySection:
 
     def _section(self, heading="", content="", bullets=None, visuals=None):
@@ -470,7 +467,6 @@ class TestRegistryIntegrity:
                 f"{spec.key}.structure_aliases is not a frozenset"
 
     def test_get_spec_raises_on_unknown_key(self):
-        import pytest
         with pytest.raises(KeyError):
             _get_spec("nonexistent_key")
 
@@ -478,9 +474,6 @@ class TestRegistryIntegrity:
 # ============================================================
 # Converter — synthesis_to_presentation
 # ============================================================
-
-from schulpipeline.artifacts.converter import synthesis_to_presentation
-
 
 class TestSynthesisToPresentation:
 
